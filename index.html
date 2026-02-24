@@ -1,95 +1,149 @@
 <!DOCTYPE html>
 <html lang="ja">
+
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>DevTool One</title>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@1/css/pico.min.css">;
-<style>
-:root { --primary: #008080; }
-body { padding: 10px; background-color: #f8f9fa; }
-.sticky-input { position: sticky; top: 0; z-index: 100; background: white; padding-bottom: 10px; border-bottom: 2px solid #eee; }
-.card { margin-top: 15px; padding: 15px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); background: white; }
-.result-text { font-family: monospace; word-break: break-all; background: #f1f1f1; padding: 10px; border-radius: 4px; min-height: 1.5em; margin: 10px 0; }
-.badge-row { display: flex; gap: 10px; font-size: 0.8rem; margin-bottom: 10px; }
-.badge { background: #eee; padding: 2px 8px; border-radius: 12px; }
-button.copy-btn { margin: 0; padding: 5px 10px; font-size: 0.8rem; }
-h4 { margin: 0; font-size: 1rem; color: var(--primary); }
-</style>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>DevTool One</title>
+	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@1/css/pico.min.css">;
+	<style>
+		:root {
+			--primary: #008080;
+		}
+
+		body {
+			padding: 10px;
+			background-color: #f8f9fa;
+		}
+
+		.sticky-input {
+			position: sticky;
+			top: 0;
+			z-index: 100;
+			background: white;
+			padding-bottom: 10px;
+			border-bottom: 2px solid #eee;
+		}
+
+		.card {
+			margin-top: 15px;
+			padding: 15px;
+			border-radius: 8px;
+			box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+			background: white;
+		}
+
+		.result-text {
+			font-family: monospace;
+			word-break: break-all;
+			background: #f1f1f1;
+			padding: 10px;
+			border-radius: 4px;
+			min-height: 1.5em;
+			margin: 10px 0;
+		}
+
+		.badge-row {
+			display: flex;
+			gap: 10px;
+			font-size: 0.8rem;
+			margin-bottom: 10px;
+		}
+
+		.badge {
+			background: #eee;
+			padding: 2px 8px;
+			border-radius: 12px;
+		}
+
+		button.copy-btn {
+			margin: 0;
+			padding: 5px 10px;
+			font-size: 0.8rem;
+		}
+
+		h4 {
+			margin: 0;
+			font-size: 1rem;
+			color: var(--primary);
+		}
+	</style>
 </head>
+
 <body>
 
-<main class="container">
-<div class="sticky-input">
-<label for="input">Input Text</label>
-<textarea id="input" rows="3" placeholder="ここにテキストを入力..."></textarea>
-<div class="badge-row">
-<span class="badge">文字数: <span id="count-char">0</span></span>
-<span class="badge">バイト(UTF-8): <span id="count-byte">0</span></span>
-<span class="badge">行数: <span id="count-line">1</span></span>
-</div>
-</div>
+	<main class="container">
+		<div class="sticky-input">
+			<label for="input">Input Text</label>
+			<textarea id="input" rows="3" placeholder="ここにテキストを入力..."></textarea>
+			<div class="badge-row">
+				<span class="badge">文字数: <span id="count-char">0</span></span>
+				<span class="badge">バイト(UTF-8): <span id="count-byte">0</span></span>
+				<span class="badge">行数: <span id="count-line">1</span></span>
+			</div>
+		</div>
 
-<div id="results">
-</div>
-</main>
+		<div id="results">
+		</div>
+	</main>
 
-<script>
-const input = document.getElementById('input');
-const resultsContainer = document.getElementById('results');
+	<script>
+		const input = document.getElementById('input');
+		const resultsContainer = document.getElementById('results');
 
-// 変換定義リスト
-const transformers = [
-{ id: 'url-enc', label: 'URL Encode', fn: (s) => encodeURIComponent(s) },
-{ id: 'url-dec', label: 'URL Decode', fn: (s) => { try { return decodeURIComponent(s); } catch { return "Error: 無効な形式"; } } },
-{ id: 'b64-enc', label: 'Base64 Encode', fn: (s) => btoa(unescape(encodeURIComponent(s))) },
-{ id: 'b64-dec', label: 'Base64 Decode', fn: (s) => { try { return decodeURIComponent(escape(atob(s))); } catch { return "Error: 無効な形式"; } } },
-{ id: 'html-esc', label: 'HTML Escape', fn: (s) => s.replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":"&#39;"}[m])) },
-{ id: 'upper', label: 'UPPERCASE', fn: (s) => s.toUpperCase() },
-{ id: 'lower', label: 'lowercase', fn: (s) => s.toLowerCase() },
-{ id: 'zen-han', label: '全角英数 → 半角', fn: (s) => s.replace(/[！-～]/g, m => String.fromCharCode(m.charCodeAt(0) - 0xFEE0)) }
-];
+		// 変換定義リスト
+		const transformers = [
+			{ id: 'url-enc', label: 'URL Encode', fn: (s) => encodeURIComponent(s) },
+			{ id: 'url-dec', label: 'URL Decode', fn: (s) => { try { return decodeURIComponent(s); } catch { return "Error: 無効な形式"; } } },
+			{ id: 'b64-enc', label: 'Base64 Encode', fn: (s) => btoa(unescape(encodeURIComponent(s))) },
+			{ id: 'b64-dec', label: 'Base64 Decode', fn: (s) => { try { return decodeURIComponent(escape(atob(s))); } catch { return "Error: 無効な形式"; } } },
+			{ id: 'html-esc', label: 'HTML Escape', fn: (s) => s.replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": "&#39;" }[m])) },
+			{ id: 'upper', label: 'UPPERCASE', fn: (s) => s.toUpperCase() },
+			{ id: 'lower', label: 'lowercase', fn: (s) => s.toLowerCase() },
+			{ id: 'zen-han', label: '全角英数 → 半角', fn: (s) => s.replace(/[！-～]/g, m => String.fromCharCode(m.charCodeAt(0) - 0xFEE0)) }
+		];
 
-// 初期カード生成
-transformers.forEach(t => {
-const div = document.createElement('div');
-div.className = 'card';
-div.innerHTML = `
+		// 初期カード生成
+		transformers.forEach(t => {
+			const div = document.createElement('div');
+			div.className = 'card';
+			div.innerHTML = `
 <div style="display: flex; justify-content: space-between; align-items: center;">
 <h4>${t.label}</h4>
 <button class="copy-btn outline" onclick="copyText('${t.id}')">Copy</button>
 </div>
 <div id="${t.id}" class="result-text"></div>
 `;
-resultsContainer.appendChild(div);
-});
+			resultsContainer.appendChild(div);
+		});
 
-// リアルタイム更新処理
-input.addEventListener('input', () => {
-const val = input.value;
+		// リアルタイム更新処理
+		input.addEventListener('input', () => {
+			const val = input.value;
 
-// 統計更新
-document.getElementById('count-char').innerText = val.length;
-document.getElementById('count-byte').innerText = new TextEncoder().encode(val).length;
-document.getElementById('count-line').innerText = val ? val.split('\n').length : 0;
+			// 統計更新
+			document.getElementById('count-char').innerText = val.length;
+			document.getElementById('count-byte').innerText = new TextEncoder().encode(val).length;
+			document.getElementById('count-line').innerText = val ? val.split('\n').length : 0;
 
-// 各変換実行
-transformers.forEach(t => {
-document.getElementById(t.id).innerText = val ? t.fn(val) : '';
-});
-});
+			// 各変換実行
+			transformers.forEach(t => {
+				document.getElementById(t.id).innerText = val ? t.fn(val) : '';
+			});
+		});
 
-// コピー機能
-async function copyText(id) {
-const text = document.getElementById(id).innerText;
-if (!text) return;
-await navigator.clipboard.writeText(text);
-const btn = document.querySelector(`button[onclick="copyText('${id}')"]`);
-const originalText = btn.innerText;
-btn.innerText = 'Copied!';
-setTimeout(() => btn.innerText = originalText, 1000);
-}
-</script>
+		// コピー機能
+		async function copyText(id) {
+			const text = document.getElementById(id).innerText;
+			if (!text) return;
+			await navigator.clipboard.writeText(text);
+			const btn = document.querySelector(`button[onclick="copyText('${id}')"]`);
+			const originalText = btn.innerText;
+			btn.innerText = 'Copied!';
+			setTimeout(() => btn.innerText = originalText, 1000);
+		}
+	</script>
 
 </body>
+
 </html>
