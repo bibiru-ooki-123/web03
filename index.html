@@ -1,170 +1,503 @@
 <!DOCTYPE html>
 <html lang="ja">
+
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>DevTool One</title>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@1/css/pico.min.css">
-<style>
-:root { --primary: #008080; }
-body { padding: 10px; background-color: #f8f9fa; }
-.sticky-input { position: sticky; top: 0; z-index: 100; background: white; padding-bottom: 10px; border-bottom: 2px solid #eee; }
-.card { margin-top: 15px; padding: 15px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); background: white; }
-.result-text { font-family: monospace; word-break: break-all; background: #f1f1f1; padding: 10px; border-radius: 4px; min-height: 1.5em; margin: 10px 0; }
-.badge-row { display: flex; gap: 10px; font-size: 0.8rem; margin-bottom: 10px; }
-.badge { background: #eee; padding: 2px 8px; border-radius: 12px; }
-button.copy-btn { margin: 0; padding: 5px 10px; font-size: 0.8rem; }
-h4 { margin: 0; font-size: 1rem; color: var(--primary); }
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DevTool One</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@1/css/pico.min.css">
+  <style>
+    :root {
+      --primary: #008080;
+    }
+
+    body {
+      padding: 10px;
+      background-color: #f8f9fa;
+    }
+
+    .sticky-input {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: white;
+      padding-bottom: 10px;
+      border-bottom: 2px solid #eee;
+    }
+
+    .card {
+      margin-top: 15px;
+      padding: 15px;
+      border-radius: 8px;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+      background: white;
+    }
+
+    .result-text {
+      font-family: monospace;
+      word-break: break-all;
+      background: #f1f1f1;
+      padding: 10px;
+      border-radius: 4px;
+      min-height: 1.5em;
+      margin: 10px 0;
+    }
+
+    .badge-row {
+      display: flex;
+      gap: 10px;
+      font-size: 0.8rem;
+      margin-bottom: 10px;
+    }
+
+    .badge {
+      background: #eee;
+      padding: 2px 8px;
+      border-radius: 12px;
+    }
+
+    button.copy-btn {
+      margin: 0;
+      padding: 8px 16px;
+      font-size: 0.9rem;
+      min-width: 80px;
+      min-height: 44px;
+      width: auto;
+      flex-shrink: 0;
+    }
+
+    h4 {
+      margin: 0;
+      font-size: 1rem;
+      color: var(--primary);
+    }
+  </style>
 </head>
+
 <body>
 
-<main class="container">
-<div class="sticky-input">
-<label for="input">Input Text</label>
-<textarea id="input" rows="3" placeholder="ここにテキストを入力..."></textarea>
-<div class="badge-row">
-<span class="badge">文字数: <span id="count-char">0</span></span>
-<span class="badge">バイト(UTF-8): <span id="count-byte">0</span></span>
-<span class="badge">行数: <span id="count-line">1</span></span>
-</div>
-</div>
+  <main class="container">
+    <div class="sticky-input">
+      <label for="input">Input Text</label>
+      <textarea id="input" rows="3" placeholder="ここにテキストを入力..."></textarea>
+      <div class="badge-row">
+        <span class="badge">文字数: <span id="count-char">0</span></span>
+        <span class="badge">バイト(UTF-8): <span id="count-byte">0</span></span>
+        <span class="badge">行数: <span id="count-line">1</span></span>
+      </div>
+    </div>
 
-<div id="results">
-</div>
-</main>
+    <div id="results">
+    </div>
+  </main>
 
-<script>
-const input = document.getElementById('input');
-const resultsContainer = document.getElementById('results');
+  <script>
+    const input = document.getElementById('input');
+    const resultsContainer = document.getElementById('results');
 
-// 全角/半角カタカナ変換
-// 参考: Unicode Halfwidth and Fullwidth Forms ブロックの対応を明示マッピング
-const HW_TO_FW = {
-  '｡':'。','｢':'「','｣':'」','､':'、','･':'・',
-  'ｦ':'ヲ','ｧ':'ァ','ｨ':'ィ','ｩ':'ゥ','ｪ':'ェ','ｫ':'ォ',
-  'ｬ':'ャ','ｭ':'ュ','ｮ':'ョ','ｯ':'ッ',
-  'ｰ':'ー',
-  'ｱ':'ア','ｲ':'イ','ｳ':'ウ','ｴ':'エ','ｵ':'オ',
-  'ｶ':'カ','ｷ':'キ','ｸ':'ク','ｹ':'ケ','ｺ':'コ',
-  'ｻ':'サ','ｼ':'シ','ｽ':'ス','ｾ':'セ','ｿ':'ソ',
-  'ﾀ':'タ','ﾁ':'チ','ﾂ':'ツ','ﾃ':'テ','ﾄ':'ト',
-  'ﾅ':'ナ','ﾆ':'ニ','ﾇ':'ヌ','ﾈ':'ネ','ﾉ':'ノ',
-  'ﾊ':'ハ','ﾋ':'ヒ','ﾌ':'フ','ﾍ':'ヘ','ﾎ':'ホ',
-  'ﾏ':'マ','ﾐ':'ミ','ﾑ':'ム','ﾒ':'メ','ﾓ':'モ',
-  'ﾔ':'ヤ','ﾕ':'ユ','ﾖ':'ヨ',
-  'ﾗ':'ラ','ﾘ':'リ','ﾙ':'ル','ﾚ':'レ','ﾛ':'ロ',
-  'ﾜ':'ワ','ﾝ':'ン',
-  'ﾞ':'゛','ﾟ':'゜'
-};
+    // 全角/半角カタカナ変換
+    // 参考: Unicode Halfwidth and Fullwidth Forms ブロックの対応を明示マッピング
+    const HW_TO_FW = {
+      '｡': '。', '｢': '「', '｣': '」', '､': '、', '･': '・',
+      'ｦ': 'ヲ', 'ｧ': 'ァ', 'ｨ': 'ィ', 'ｩ': 'ゥ', 'ｪ': 'ェ', 'ｫ': 'ォ',
+      'ｬ': 'ャ', 'ｭ': 'ュ', 'ｮ': 'ョ', 'ｯ': 'ッ',
+      'ｰ': 'ー',
+      'ｱ': 'ア', 'ｲ': 'イ', 'ｳ': 'ウ', 'ｴ': 'エ', 'ｵ': 'オ',
+      'ｶ': 'カ', 'ｷ': 'キ', 'ｸ': 'ク', 'ｹ': 'ケ', 'ｺ': 'コ',
+      'ｻ': 'サ', 'ｼ': 'シ', 'ｽ': 'ス', 'ｾ': 'セ', 'ｿ': 'ソ',
+      'ﾀ': 'タ', 'ﾁ': 'チ', 'ﾂ': 'ツ', 'ﾃ': 'テ', 'ﾄ': 'ト',
+      'ﾅ': 'ナ', 'ﾆ': 'ニ', 'ﾇ': 'ヌ', 'ﾈ': 'ネ', 'ﾉ': 'ノ',
+      'ﾊ': 'ハ', 'ﾋ': 'ヒ', 'ﾌ': 'フ', 'ﾍ': 'ヘ', 'ﾎ': 'ホ',
+      'ﾏ': 'マ', 'ﾐ': 'ミ', 'ﾑ': 'ム', 'ﾒ': 'メ', 'ﾓ': 'モ',
+      'ﾔ': 'ヤ', 'ﾕ': 'ユ', 'ﾖ': 'ヨ',
+      'ﾗ': 'ラ', 'ﾘ': 'リ', 'ﾙ': 'ル', 'ﾚ': 'レ', 'ﾛ': 'ロ',
+      'ﾜ': 'ワ', 'ﾝ': 'ン',
+      'ﾞ': '゛', 'ﾟ': '゜'
+    };
 
-// 濁点/半濁点の合成（半角）
-const COMPOSE_DAKUTEN = {
-  'ｶﾞ':'ガ','ｷﾞ':'ギ','ｸﾞ':'グ','ｹﾞ':'ゲ','ｺﾞ':'ゴ',
-  'ｻﾞ':'ザ','ｼﾞ':'ジ','ｽﾞ':'ズ','ｾﾞ':'ゼ','ｿﾞ':'ゾ',
-  'ﾀﾞ':'ダ','ﾁﾞ':'ヂ','ﾂﾞ':'ヅ','ﾃﾞ':'デ','ﾄﾞ':'ド',
-  'ﾊﾞ':'バ','ﾋﾞ':'ビ','ﾌﾞ':'ブ','ﾍﾞ':'ベ','ﾎﾞ':'ボ',
-  'ﾊﾟ':'パ','ﾋﾟ':'ピ','ﾌﾟ':'プ','ﾍﾟ':'ペ','ﾎﾟ':'ポ',
-  'ｳﾞ':'ヴ',
-  'ﾜﾞ':'ヷ','ｦﾞ':'ヺ'
-};
+    // 濁点/半濁点の合成（半角）
+    const COMPOSE_DAKUTEN = {
+      'ｶﾞ': 'ガ', 'ｷﾞ': 'ギ', 'ｸﾞ': 'グ', 'ｹﾞ': 'ゲ', 'ｺﾞ': 'ゴ',
+      'ｻﾞ': 'ザ', 'ｼﾞ': 'ジ', 'ｽﾞ': 'ズ', 'ｾﾞ': 'ゼ', 'ｿﾞ': 'ゾ',
+      'ﾀﾞ': 'ダ', 'ﾁﾞ': 'ヂ', 'ﾂﾞ': 'ヅ', 'ﾃﾞ': 'デ', 'ﾄﾞ': 'ド',
+      'ﾊﾞ': 'バ', 'ﾋﾞ': 'ビ', 'ﾌﾞ': 'ブ', 'ﾍﾞ': 'ベ', 'ﾎﾞ': 'ボ',
+      'ﾊﾟ': 'パ', 'ﾋﾟ': 'ピ', 'ﾌﾟ': 'プ', 'ﾍﾟ': 'ペ', 'ﾎﾟ': 'ポ',
+      'ｳﾞ': 'ヴ',
+      'ﾜﾞ': 'ヷ', 'ｦﾞ': 'ヺ'
+    };
 
-// 逆引き（全角→半角）
-const FW_TO_HW = (() => {
-  const r = {};
-  for (const [k,v] of Object.entries(HW_TO_FW)) {
-    // 濁点/半濁点単体は後で扱うのでスキップ
-    if (k === 'ﾞ' || k === 'ﾟ') continue;
-    r[v] = k;
-  }
-  // 合成文字の逆引き
-  for (const [k,v] of Object.entries(COMPOSE_DAKUTEN)) r[v] = k;
-  return r;
-})();
-
-function toFullWidthKana(str) {
-  if (!str) return '';
-  let out = '';
-  for (let i=0; i<str.length; i++) {
-    const c = str[i];
-    const next = str[i+1];
-    // 半角カナ + 濁点/半濁点 の合成
-    if (next === 'ﾞ' || next === 'ﾟ') {
-      const pair = c + next;
-      if (COMPOSE_DAKUTEN[pair]) {
-        out += COMPOSE_DAKUTEN[pair];
-        i++;
-        continue;
+    // 逆引き（全角→半角）
+    const FW_TO_HW = (() => {
+      const r = {};
+      for (const [k, v] of Object.entries(HW_TO_FW)) {
+        // 濁点/半濁点単体は後で扱うのでスキップ
+        if (k === 'ﾞ' || k === 'ﾟ') continue;
+        r[v] = k;
       }
+      // 合成文字の逆引き
+      for (const [k, v] of Object.entries(COMPOSE_DAKUTEN)) r[v] = k;
+      return r;
+    })();
+
+    function toFullWidthKana(str) {
+      if (!str) return '';
+      let out = '';
+      for (let i = 0; i < str.length; i++) {
+        const c = str[i];
+        const next = str[i + 1];
+        // 半角カナ + 濁点/半濁点 の合成
+        if (next === 'ﾞ' || next === 'ﾟ') {
+          const pair = c + next;
+          if (COMPOSE_DAKUTEN[pair]) {
+            out += COMPOSE_DAKUTEN[pair];
+            i++;
+            continue;
+          }
+        }
+        out += HW_TO_FW[c] ?? c;
+      }
+      return out;
     }
-    out += HW_TO_FW[c] ?? c;
-  }
-  return out;
-}
 
-function toHalfWidthKana(str) {
-  if (!str) return '';
-  let out = '';
-  for (const c of str) {
-    out += FW_TO_HW[c] ?? c;
-  }
-  return out;
-}
+    function toHalfWidthKana(str) {
+      if (!str) return '';
+      let out = '';
+      for (const c of str) {
+        out += FW_TO_HW[c] ?? c;
+      }
+      return out;
+    }
 
-// 変換定義リスト
-const transformers = [
-{ id: 'url-enc', label: 'URL Encode', fn: (s) => encodeURIComponent(s) },
-{ id: 'url-dec', label: 'URL Decode', fn: (s) => { try { return decodeURIComponent(s); } catch { return "Error: 無効な形式"; } } },
-{ id: 'b64-enc', label: 'Base64 Encode', fn: (s) => btoa(unescape(encodeURIComponent(s))) },
-{ id: 'b64-dec', label: 'Base64 Decode', fn: (s) => { try { return decodeURIComponent(escape(atob(s))); } catch { return "Error: 無効な形式"; } } },
-{ id: 'html-esc', label: 'HTML Escape', fn: (s) => s.replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":"&#39;"}[m])) },
-{ id: 'upper', label: 'UPPERCASE', fn: (s) => s.toUpperCase() },
-{ id: 'lower', label: 'lowercase', fn: (s) => s.toLowerCase() },
-{ id: 'zen-han', label: '全角英数 → 半角', fn: (s) => s.replace(/[！-～]/g, m => String.fromCharCode(m.charCodeAt(0) - 0xFEE0)) },
-{ id: 'kana-fw', label: '半角カタカナ → 全角カタカナ', fn: (s) => toFullWidthKana(s) },
-{ id: 'kana-hw', label: '全角カタカナ → 半角カタカナ', fn: (s) => toHalfWidthKana(s) }
-];
+    // 全角英数記号 → 半角
+    function toHalfWidthAlnum(str) {
+      return str.replace(/[！-～]/g, m => String.fromCharCode(m.charCodeAt(0) - 0xFEE0))
+        .replace(/\u3000/g, ' ');
+    }
 
-// 初期カード生成
-transformers.forEach(t => {
-const div = document.createElement('div');
-div.className = 'card';
-div.innerHTML = `
+    // 半角英数記号 → 全角
+    function toFullWidthAlnum(str) {
+      return str.replace(/[!-~]/g, m => String.fromCharCode(m.charCodeAt(0) + 0xFEE0))
+        .replace(/ /g, '\u3000');
+    }
+
+    // すべてを半角（英数記号 + カタカナ）
+    function toAllHalfWidth(str) {
+      return toHalfWidthKana(toHalfWidthAlnum(str));
+    }
+
+    // すべてを全角（英数記号 + カタカナ）
+    function toAllFullWidth(str) {
+      return toFullWidthKana(toFullWidthAlnum(str));
+    }
+
+    // 変換定義リスト
+    const transformers = [
+      { id: 'url-enc', label: 'URL Encode', fn: (s) => encodeURIComponent(s) },
+      { id: 'url-dec', label: 'URL Decode', fn: (s) => { try { return decodeURIComponent(s); } catch { return "Error: 無効な形式"; } } },
+      { id: 'b64-enc', label: 'Base64 Encode', fn: (s) => btoa(unescape(encodeURIComponent(s))) },
+      { id: 'b64-dec', label: 'Base64 Decode', fn: (s) => { try { return decodeURIComponent(escape(atob(s))); } catch { return "Error: 無効な形式"; } } },
+      { id: 'html-esc', label: 'HTML Escape', fn: (s) => s.replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": "&#39;" }[m])) },
+      { id: 'upper', label: 'UPPERCASE', fn: (s) => s.toUpperCase() },
+      { id: 'lower', label: 'lowercase', fn: (s) => s.toLowerCase() },
+      { id: 'zen-han', label: '全角英数 → 半角', fn: (s) => s.replace(/[！-～]/g, m => String.fromCharCode(m.charCodeAt(0) - 0xFEE0)) },
+      { id: 'kana-fw', label: '半角カタカナ → 全角カタカナ', fn: (s) => toFullWidthKana(s) },
+      { id: 'kana-hw', label: '全角カタカナ → 半角カタカナ', fn: (s) => toHalfWidthKana(s) },
+      { id: 'all-hw', label: 'すべてを半角', fn: (s) => toAllHalfWidth(s) },
+      { id: 'all-fw', label: 'すべてを全角', fn: (s) => toAllFullWidth(s) }
+    ];
+
+    // 初期カード生成
+    transformers.forEach(t => {
+      const div = document.createElement('div');
+      div.className = 'card';
+      div.innerHTML = `
 <div style="display: flex; justify-content: space-between; align-items: center;">
-<h4>${t.label}</h4>
 <button class="copy-btn outline" onclick="copyText('${t.id}')">Copy</button>
+<h4>${t.label}</h4>
 </div>
 <div id="${t.id}" class="result-text"></div>
 `;
-resultsContainer.appendChild(div);
-});
+      resultsContainer.appendChild(div);
+    });
 
-// リアルタイム更新処理
-input.addEventListener('input', () => {
-const val = input.value;
+    // リアルタイム更新処理
+    input.addEventListener('input', () => {
+      const val = input.value;
 
-// 統計更新
-document.getElementById('count-char').innerText = val.length;
-document.getElementById('count-byte').innerText = new TextEncoder().encode(val).length;
-document.getElementById('count-line').innerText = val ? val.split('\n').length : 0;
+      // 統計更新
+      document.getElementById('count-char').innerText = val.length;
+      document.getElementById('count-byte').innerText = new TextEncoder().encode(val).length;
+      document.getElementById('count-line').innerText = val ? val.split('\n').length : 0;
 
-// 各変換実行
-transformers.forEach(t => {
-document.getElementById(t.id).innerText = val ? t.fn(val) : '';
-});
-});
+      // 各変換実行
+      transformers.forEach(t => {
+        document.getElementById(t.id).innerText = val ? t.fn(val) : '';
+      });
+    });
 
-// コピー機能
-async function copyText(id) {
-const text = document.getElementById(id).innerText;
-if (!text) return;
-await navigator.clipboard.writeText(text);
-const btn = document.querySelector(`button[onclick="copyText('${id}')"]`);
-const originalText = btn.innerText;
-btn.innerText = 'Copied!';
-setTimeout(() => btn.innerText = originalText, 1000);
-}
-</script>
+    // コピー機能
+    async function copyText(id) {
+      const text = document.getElementById(id).innerText;
+      if (!text) return;
+      await navigator.clipboard.writeText(text);
+      const btn = document.querySelector(`button[onclick="copyText('${id}')"]`);
+      const originalText = btn.innerText;
+      btn.innerText = 'Copied!';
+      setTimeout(() => btn.innerText = originalText, 1000);
+    }
+  </script>
 
 </body>
+
+</html><!DOCTYPE html>
+<html lang="ja">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DevTool One</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@1/css/pico.min.css">
+  <style>
+    :root {
+      --primary: #008080;
+    }
+
+    body {
+      padding: 10px;
+      background-color: #f8f9fa;
+    }
+
+    .sticky-input {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: white;
+      padding-bottom: 10px;
+      border-bottom: 2px solid #eee;
+    }
+
+    .card {
+      margin-top: 15px;
+      padding: 15px;
+      border-radius: 8px;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+      background: white;
+    }
+
+    .result-text {
+      font-family: monospace;
+      word-break: break-all;
+      background: #f1f1f1;
+      padding: 10px;
+      border-radius: 4px;
+      min-height: 1.5em;
+      margin: 10px 0;
+    }
+
+    .badge-row {
+      display: flex;
+      gap: 10px;
+      font-size: 0.8rem;
+      margin-bottom: 10px;
+    }
+
+    .badge {
+      background: #eee;
+      padding: 2px 8px;
+      border-radius: 12px;
+    }
+
+    button.copy-btn {
+      margin: 0;
+      padding: 8px 16px;
+      font-size: 0.9rem;
+      min-width: 80px;
+      min-height: 44px;
+      width: auto;
+      flex-shrink: 0;
+    }
+
+    h4 {
+      margin: 0;
+      font-size: 1rem;
+      color: var(--primary);
+    }
+  </style>
+</head>
+
+<body>
+
+  <main class="container">
+    <div class="sticky-input">
+      <label for="input">Input Text</label>
+      <textarea id="input" rows="3" placeholder="ここにテキストを入力..."></textarea>
+      <div class="badge-row">
+        <span class="badge">文字数: <span id="count-char">0</span></span>
+        <span class="badge">バイト(UTF-8): <span id="count-byte">0</span></span>
+        <span class="badge">行数: <span id="count-line">1</span></span>
+      </div>
+    </div>
+
+    <div id="results">
+    </div>
+  </main>
+
+  <script>
+    const input = document.getElementById('input');
+    const resultsContainer = document.getElementById('results');
+
+    // 全角/半角カタカナ変換
+    // 参考: Unicode Halfwidth and Fullwidth Forms ブロックの対応を明示マッピング
+    const HW_TO_FW = {
+      '｡': '。', '｢': '「', '｣': '」', '､': '、', '･': '・',
+      'ｦ': 'ヲ', 'ｧ': 'ァ', 'ｨ': 'ィ', 'ｩ': 'ゥ', 'ｪ': 'ェ', 'ｫ': 'ォ',
+      'ｬ': 'ャ', 'ｭ': 'ュ', 'ｮ': 'ョ', 'ｯ': 'ッ',
+      'ｰ': 'ー',
+      'ｱ': 'ア', 'ｲ': 'イ', 'ｳ': 'ウ', 'ｴ': 'エ', 'ｵ': 'オ',
+      'ｶ': 'カ', 'ｷ': 'キ', 'ｸ': 'ク', 'ｹ': 'ケ', 'ｺ': 'コ',
+      'ｻ': 'サ', 'ｼ': 'シ', 'ｽ': 'ス', 'ｾ': 'セ', 'ｿ': 'ソ',
+      'ﾀ': 'タ', 'ﾁ': 'チ', 'ﾂ': 'ツ', 'ﾃ': 'テ', 'ﾄ': 'ト',
+      'ﾅ': 'ナ', 'ﾆ': 'ニ', 'ﾇ': 'ヌ', 'ﾈ': 'ネ', 'ﾉ': 'ノ',
+      'ﾊ': 'ハ', 'ﾋ': 'ヒ', 'ﾌ': 'フ', 'ﾍ': 'ヘ', 'ﾎ': 'ホ',
+      'ﾏ': 'マ', 'ﾐ': 'ミ', 'ﾑ': 'ム', 'ﾒ': 'メ', 'ﾓ': 'モ',
+      'ﾔ': 'ヤ', 'ﾕ': 'ユ', 'ﾖ': 'ヨ',
+      'ﾗ': 'ラ', 'ﾘ': 'リ', 'ﾙ': 'ル', 'ﾚ': 'レ', 'ﾛ': 'ロ',
+      'ﾜ': 'ワ', 'ﾝ': 'ン',
+      'ﾞ': '゛', 'ﾟ': '゜'
+    };
+
+    // 濁点/半濁点の合成（半角）
+    const COMPOSE_DAKUTEN = {
+      'ｶﾞ': 'ガ', 'ｷﾞ': 'ギ', 'ｸﾞ': 'グ', 'ｹﾞ': 'ゲ', 'ｺﾞ': 'ゴ',
+      'ｻﾞ': 'ザ', 'ｼﾞ': 'ジ', 'ｽﾞ': 'ズ', 'ｾﾞ': 'ゼ', 'ｿﾞ': 'ゾ',
+      'ﾀﾞ': 'ダ', 'ﾁﾞ': 'ヂ', 'ﾂﾞ': 'ヅ', 'ﾃﾞ': 'デ', 'ﾄﾞ': 'ド',
+      'ﾊﾞ': 'バ', 'ﾋﾞ': 'ビ', 'ﾌﾞ': 'ブ', 'ﾍﾞ': 'ベ', 'ﾎﾞ': 'ボ',
+      'ﾊﾟ': 'パ', 'ﾋﾟ': 'ピ', 'ﾌﾟ': 'プ', 'ﾍﾟ': 'ペ', 'ﾎﾟ': 'ポ',
+      'ｳﾞ': 'ヴ',
+      'ﾜﾞ': 'ヷ', 'ｦﾞ': 'ヺ'
+    };
+
+    // 逆引き（全角→半角）
+    const FW_TO_HW = (() => {
+      const r = {};
+      for (const [k, v] of Object.entries(HW_TO_FW)) {
+        // 濁点/半濁点単体は後で扱うのでスキップ
+        if (k === 'ﾞ' || k === 'ﾟ') continue;
+        r[v] = k;
+      }
+      // 合成文字の逆引き
+      for (const [k, v] of Object.entries(COMPOSE_DAKUTEN)) r[v] = k;
+      return r;
+    })();
+
+    function toFullWidthKana(str) {
+      if (!str) return '';
+      let out = '';
+      for (let i = 0; i < str.length; i++) {
+        const c = str[i];
+        const next = str[i + 1];
+        // 半角カナ + 濁点/半濁点 の合成
+        if (next === 'ﾞ' || next === 'ﾟ') {
+          const pair = c + next;
+          if (COMPOSE_DAKUTEN[pair]) {
+            out += COMPOSE_DAKUTEN[pair];
+            i++;
+            continue;
+          }
+        }
+        out += HW_TO_FW[c] ?? c;
+      }
+      return out;
+    }
+
+    function toHalfWidthKana(str) {
+      if (!str) return '';
+      let out = '';
+      for (const c of str) {
+        out += FW_TO_HW[c] ?? c;
+      }
+      return out;
+    }
+
+    // 全角英数記号 → 半角
+    function toHalfWidthAlnum(str) {
+      return str.replace(/[！-～]/g, m => String.fromCharCode(m.charCodeAt(0) - 0xFEE0))
+        .replace(/\u3000/g, ' ');
+    }
+
+    // 半角英数記号 → 全角
+    function toFullWidthAlnum(str) {
+      return str.replace(/[!-~]/g, m => String.fromCharCode(m.charCodeAt(0) + 0xFEE0))
+        .replace(/ /g, '\u3000');
+    }
+
+    // すべてを半角（英数記号 + カタカナ）
+    function toAllHalfWidth(str) {
+      return toHalfWidthKana(toHalfWidthAlnum(str));
+    }
+
+    // すべてを全角（英数記号 + カタカナ）
+    function toAllFullWidth(str) {
+      return toFullWidthKana(toFullWidthAlnum(str));
+    }
+
+    // 変換定義リスト
+    const transformers = [
+      { id: 'url-enc', label: 'URL Encode', fn: (s) => encodeURIComponent(s) },
+      { id: 'url-dec', label: 'URL Decode', fn: (s) => { try { return decodeURIComponent(s); } catch { return "Error: 無効な形式"; } } },
+      { id: 'b64-enc', label: 'Base64 Encode', fn: (s) => btoa(unescape(encodeURIComponent(s))) },
+      { id: 'b64-dec', label: 'Base64 Decode', fn: (s) => { try { return decodeURIComponent(escape(atob(s))); } catch { return "Error: 無効な形式"; } } },
+      { id: 'html-esc', label: 'HTML Escape', fn: (s) => s.replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": "&#39;" }[m])) },
+      { id: 'upper', label: 'UPPERCASE', fn: (s) => s.toUpperCase() },
+      { id: 'lower', label: 'lowercase', fn: (s) => s.toLowerCase() },
+      { id: 'zen-han', label: '全角英数 → 半角', fn: (s) => s.replace(/[！-～]/g, m => String.fromCharCode(m.charCodeAt(0) - 0xFEE0)) },
+      { id: 'kana-fw', label: '半角カタカナ → 全角カタカナ', fn: (s) => toFullWidthKana(s) },
+      { id: 'kana-hw', label: '全角カタカナ → 半角カタカナ', fn: (s) => toHalfWidthKana(s) },
+      { id: 'all-hw', label: 'すべてを半角', fn: (s) => toAllHalfWidth(s) },
+      { id: 'all-fw', label: 'すべてを全角', fn: (s) => toAllFullWidth(s) }
+    ];
+
+    // 初期カード生成
+    transformers.forEach(t => {
+      const div = document.createElement('div');
+      div.className = 'card';
+      div.innerHTML = `
+<div style="display: flex; justify-content: space-between; align-items: center;">
+<button class="copy-btn outline" onclick="copyText('${t.id}')">Copy</button>
+<h4>${t.label}</h4>
+</div>
+<div id="${t.id}" class="result-text"></div>
+`;
+      resultsContainer.appendChild(div);
+    });
+
+    // リアルタイム更新処理
+    input.addEventListener('input', () => {
+      const val = input.value;
+
+      // 統計更新
+      document.getElementById('count-char').innerText = val.length;
+      document.getElementById('count-byte').innerText = new TextEncoder().encode(val).length;
+      document.getElementById('count-line').innerText = val ? val.split('\n').length : 0;
+
+      // 各変換実行
+      transformers.forEach(t => {
+        document.getElementById(t.id).innerText = val ? t.fn(val) : '';
+      });
+    });
+
+    // コピー機能
+    async function copyText(id) {
+      const text = document.getElementById(id).innerText;
+      if (!text) return;
+      await navigator.clipboard.writeText(text);
+      const btn = document.querySelector(`button[onclick="copyText('${id}')"]`);
+      const originalText = btn.innerText;
+      btn.innerText = 'Copied!';
+      setTimeout(() => btn.innerText = originalText, 1000);
+    }
+  </script>
+
+</body>
+
 </html>
