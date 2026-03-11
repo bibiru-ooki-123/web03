@@ -1,99 +1,132 @@
 <!DOCTYPE html>
 <html lang="ja">
-
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>DevTool One</title>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@1/css/pico.min.css">
+  https://cdn.jsdelivr.net/npm/@picocss/pico@1/css/pico.min.css
   <style>
-    :root {
-      --primary: #008080;
-    }
+    :root { --primary: #008080; }
 
-    body {
-      padding: 10px;
-      background-color: #f8f9fa;
-    }
-
-    .sticky-input {
-      background: white;
-      padding-bottom: 10px;
-      border-bottom: 2px solid #eee;
-    }
-
+    body { padding: 10px; background-color: #f8f9fa; }
+    .sticky-input { background: white; padding-bottom: 10px; border-bottom: 2px solid #eee; }
     .card {
-      margin-top: 15px;
-      padding: 15px;
-      border-radius: 8px;
-      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-      background: white;
+      margin-top: 15px; padding: 15px; border-radius: 8px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1); background: white;
+      scroll-margin-top: 12px;
     }
-
     .result-text {
-      font-family: monospace;
-      word-break: break-all;
-      background: #f1f1f1;
-      padding: 10px;
-      border-radius: 4px;
-      min-height: 1.5em;
-      margin: 10px 0;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      word-break: break-all; background: #f1f1f1; padding: 10px; border-radius: 4px;
+      min-height: 1.5em; margin: 10px 0;
     }
-
-    .badge-row {
-      display: flex;
-      gap: 10px;
-      font-size: 0.8rem;
-      margin-bottom: 10px;
-    }
-
-    .badge {
-      background: #eee;
-      padding: 2px 8px;
-      border-radius: 12px;
-    }
+    .badge-row { display: flex; gap: 10px; font-size: 0.8rem; margin-bottom: 10px; flex-wrap: wrap; }
+    .badge { background: #eee; padding: 2px 8px; border-radius: 12px; }
 
     button.copy-btn {
-      margin: 0;
-      padding: 8px 16px;
-      font-size: 0.9rem;
-      min-width: 80px;
-      min-height: 44px;
-      width: auto;
-      flex-shrink: 0;
+      margin: 0; padding: 8px 16px; font-size: 0.9rem;
+      min-width: 80px; min-height: 44px; width: auto; flex-shrink: 0;
     }
 
-    h4 {
+    h4 { margin: 0; font-size: 1rem; color: var(--primary); }
+
+    /* ===== UX Enhanced: Anchor Menu ===== */
+    .anchor-wrap { margin-top: 8px; }
+    .anchor-toolbar {
+      display: flex; gap: 8px; align-items: center; flex-wrap: wrap;
+      margin: 6px 0 8px;
+    }
+    .anchor-toolbar input[type="search"] {
+      max-width: 360px;
+      height: 36px;
+      font-size: 0.85rem;
       margin: 0;
-      font-size: 1rem;
-      color: var(--primary);
+    }
+    .anchor-toolbar button {
+      height: 36px;
+      padding: 6px 12px;
+      margin: 0;
+      font-size: 0.8rem;
+      border-radius: 14px;
+      white-space: nowrap;
+    }
+
+    .anchor-menu {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    .anchor-menu button {
+      padding: 6px 12px;
+      font-size: 0.72rem;
+      border-radius: 14px;
+      transition: all 0.15s ease;
+      opacity: 0.78;
+      margin: 0;
+      white-space: nowrap;
+    }
+
+    /* Category colors */
+    .anchor-menu button.cat-encode { background: #e0f2f1; color: #00695c; border-color: rgba(0,105,92,0.25); }
+    .anchor-menu button.cat-decode { background: #ede7f6; color: #4527a0; border-color: rgba(69,39,160,0.25); }
+    .anchor-menu button.cat-text   { background: #fff3e0; color: #ef6c00; border-color: rgba(239,108,0,0.25); }
+    .anchor-menu button.cat-width  { background: #e3f2fd; color: #1565c0; border-color: rgba(21,101,192,0.25); }
+
+    /* Active */
+    .anchor-menu button.active {
+      opacity: 1;
+      font-weight: 700;
+      box-shadow: 0 0 0 2px rgba(0,0,0,0.08) inset;
+      transform: translateY(-1px);
+    }
+
+    /* Jump highlight flash */
+    .card.highlight { animation: highlightFlash 1.1s ease; }
+    @keyframes highlightFlash {
+      0%   { background-color: #fff9c4; }
+      100% { background-color: white; }
+    }
+
+    /* Small helper on narrow screens */
+    @media (max-width: 520px) {
+      .anchor-toolbar input[type="search"] { width: 100%; max-width: none; }
     }
   </style>
 </head>
 
 <body>
-
   <main class="container">
     <div class="sticky-input">
       <label for="input">Input Text</label>
       <textarea id="input" rows="3" placeholder="ここにテキストを入力..."></textarea>
+
       <div class="badge-row">
         <span class="badge">文字数: <span id="count-char">0</span></span>
         <span class="badge">バイト(UTF-8): <span id="count-byte">0</span></span>
         <span class="badge">行数: <span id="count-line">1</span></span>
       </div>
+
+      <!-- UX強化: ジャンプメニュー（入力欄の下） -->
+      <div class="anchor-wrap">
+        <div class="anchor-toolbar">
+          <input id="anchor-filter" type="search" placeholder="ジャンプボタンを絞り込み（例: JSON / Unicode / Base64）">
+          <button id="anchor-clear" class="outline" type="button">クリア</button>
+          <button id="anchor-top" class="outline" type="button">先頭へ</button>
+        </div>
+        <div class="anchor-menu" id="anchor-menu"></div>
+      </div>
     </div>
 
-    <div id="results">
-    </div>
+    <div id="results"></div>
   </main>
 
   <script>
     const input = document.getElementById('input');
     const resultsContainer = document.getElementById('results');
 
+    // =========================
     // 全角/半角カタカナ変換
-    // 参考: Unicode Halfwidth and Fullwidth Forms ブロックの対応を明示マッピング
+    // =========================
     const HW_TO_FW = {
       '｡': '。', '｢': '「', '｣': '」', '､': '、', '･': '・',
       'ｦ': 'ヲ', 'ｧ': 'ァ', 'ｨ': 'ィ', 'ｩ': 'ゥ', 'ｪ': 'ェ', 'ｫ': 'ォ',
@@ -112,7 +145,6 @@
       'ﾞ': '゛', 'ﾟ': '゜'
     };
 
-    // 濁点/半濁点の合成（半角）
     const COMPOSE_DAKUTEN = {
       'ｶﾞ': 'ガ', 'ｷﾞ': 'ギ', 'ｸﾞ': 'グ', 'ｹﾞ': 'ゲ', 'ｺﾞ': 'ゴ',
       'ｻﾞ': 'ザ', 'ｼﾞ': 'ジ', 'ｽﾞ': 'ズ', 'ｾﾞ': 'ゼ', 'ｿﾞ': 'ゾ',
@@ -123,15 +155,12 @@
       'ﾜﾞ': 'ヷ', 'ｦﾞ': 'ヺ'
     };
 
-    // 逆引き（全角→半角）
     const FW_TO_HW = (() => {
       const r = {};
       for (const [k, v] of Object.entries(HW_TO_FW)) {
-        // 濁点/半濁点単体は後で扱うのでスキップ
         if (k === 'ﾞ' || k === 'ﾟ') continue;
         r[v] = k;
       }
-      // 合成文字の逆引き
       for (const [k, v] of Object.entries(COMPOSE_DAKUTEN)) r[v] = k;
       return r;
     })();
@@ -142,16 +171,11 @@
       for (let i = 0; i < str.length; i++) {
         const c = str[i];
         const next = str[i + 1];
-        // 半角カナ + 濁点/半濁点 の合成
         if (next === 'ﾞ' || next === 'ﾟ') {
           const pair = c + next;
-          if (COMPOSE_DAKUTEN[pair]) {
-            out += COMPOSE_DAKUTEN[pair];
-            i++;
-            continue;
-          }
+          if (COMPOSE_DAKUTEN[pair]) { out += COMPOSE_DAKUTEN[pair]; i++; continue; }
         }
-        out += HW_TO_FW[c] ?? c;
+        out += (HW_TO_FW[c] ?? c);
       }
       return out;
     }
@@ -159,91 +183,248 @@
     function toHalfWidthKana(str) {
       if (!str) return '';
       let out = '';
-      for (const c of str) {
-        out += FW_TO_HW[c] ?? c;
+      for (const c of str) out += (FW_TO_HW[c] ?? c);
+      return out;
+    }
+
+    function toHalfWidthAlnum(str) {
+      return str
+        .replace(/[！-～]/g, m => String.fromCharCode(m.charCodeAt(0) - 0xFEE0))
+        .replace(/\u3000/g, ' ');
+    }
+
+    function toFullWidthAlnum(str) {
+      return str
+        .replace(/[!-~]/g, m => String.fromCharCode(m.charCodeAt(0) + 0xFEE0))
+        .replace(/ /g, '\u3000');
+    }
+
+    function toAllHalfWidth(str) { return toHalfWidthKana(toHalfWidthAlnum(str)); }
+    function toAllFullWidth(str) { return toFullWidthKana(toFullWidthAlnum(str)); }
+
+    // =========================
+    // 追加: Unicode / HTML / JSON
+    // =========================
+
+    // Unicode Encode（統一）: 常に \uXXXX。U+FFFF超はサロゲートで \uXXXX\uXXXX
+    function unicodeEncode(str) {
+      if (!str) return '';
+      let out = '';
+      for (const ch of str) {
+        const cp = ch.codePointAt(0);
+        if (cp <= 0xFFFF) {
+          out += '\\u' + cp.toString(16).toUpperCase().padStart(4, '0');
+        } else {
+          const u = cp - 0x10000;
+          const high = 0xD800 + (u >> 10);
+          const low  = 0xDC00 + (u & 0x3FF);
+          out += '\\u' + high.toString(16).toUpperCase().padStart(4, '0');
+          out += '\\u' + low.toString(16).toUpperCase().padStart(4, '0');
+        }
       }
       return out;
     }
 
-    // 全角英数記号 → 半角
-    function toHalfWidthAlnum(str) {
-      return str.replace(/[！-～]/g, m => String.fromCharCode(m.charCodeAt(0) - 0xFEE0))
-        .replace(/\u3000/g, ' ');
+    // Unicode Decode: \uXXXX を復号（サロゲートペアは結果的に1文字扱い）
+    function unicodeDecode(str) {
+      if (!str) return '';
+      try {
+        return str.replace(/\\u([0-9a-fA-F]{4})/g, (m, hex) => {
+          const codeUnit = parseInt(hex, 16);
+          if (!Number.isFinite(codeUnit)) return m;
+          return String.fromCharCode(codeUnit);
+        });
+      } catch {
+        return "Error: 無効な形式";
+      }
     }
 
-    // 半角英数記号 → 全角
-    function toFullWidthAlnum(str) {
-      return str.replace(/[!-~]/g, m => String.fromCharCode(m.charCodeAt(0) + 0xFEE0))
-        .replace(/ /g, '\u3000');
+    // HTMLタグ除去（エンティティもデコードされる）
+    function stripHtmlTags(str) {
+      if (!str) return '';
+      const doc = new DOMParser().parseFromString(String(str), 'text/html');
+      return doc.body.textContent || '';
     }
 
-    // すべてを半角（英数記号 + カタカナ）
-    function toAllHalfWidth(str) {
-      return toHalfWidthKana(toHalfWidthAlnum(str));
+    // JSON Escape（クォート無し）
+    function jsonEscape(str) {
+      if (str == null) return '';
+      return JSON.stringify(String(str)).slice(1, -1);
     }
 
-    // すべてを全角（英数記号 + カタカナ）
-    function toAllFullWidth(str) {
-      return toFullWidthKana(toFullWidthAlnum(str));
+    // JSON Unescape（クォート有無どちらも対応）
+    function jsonUnescape(str) {
+      if (str == null) return '';
+      const s = String(str);
+      try {
+        if (s.length >= 2 && s.startsWith('"') && s.endsWith('"')) return JSON.parse(s);
+        return JSON.parse('"' + s + '"');
+      } catch {
+        return "Error: 無効なJSONエスケープ";
+      }
     }
 
+    // =========================
     // 変換定義リスト
+    // =========================
     const transformers = [
       { id: 'url-enc', label: 'URL Encode', fn: (s) => encodeURIComponent(s) },
       { id: 'url-dec', label: 'URL Decode', fn: (s) => { try { return decodeURIComponent(s); } catch { return "Error: 無効な形式"; } } },
+
       { id: 'b64-enc', label: 'Base64 Encode', fn: (s) => btoa(unescape(encodeURIComponent(s))) },
       { id: 'b64-dec', label: 'Base64 Decode', fn: (s) => { try { return decodeURIComponent(escape(atob(s))); } catch { return "Error: 無効な形式"; } } },
-      { id: 'html-esc', label: 'HTML Escape', fn: (s) => s.replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": "&#39;" }[m])) },
+
+      // HTML Escape（修正版）
+      {
+        id: 'html-esc',
+        label: 'HTML Escape',
+        fn: (s) => s.replace(/[&<>"']/g, m => ({
+          '&': '&amp;',
+          '<': '&lt;',
+          '>': '&gt;',
+          '"': '&quot;',
+          "'": '&#39;'
+        }[m]))
+      },
+
+      { id: 'html-strip', label: 'HTMLタグ除去 (Text Only)', fn: (s) => stripHtmlTags(s) },
+
+      { id: 'uni-enc', label: 'Unicode Encode (\\uXXXX)', fn: (s) => unicodeEncode(s) },
+      { id: 'uni-dec', label: 'Unicode Decode (\\uXXXX)', fn: (s) => unicodeDecode(s) },
+
+      { id: 'json-esc', label: 'JSON Escape (string literal)', fn: (s) => jsonEscape(s) },
+      { id: 'json-unesc', label: 'JSON Unescape (decode)', fn: (s) => jsonUnescape(s) },
+
       { id: 'upper', label: 'UPPERCASE', fn: (s) => s.toUpperCase() },
       { id: 'lower', label: 'lowercase', fn: (s) => s.toLowerCase() },
-      { id: 'zen-han', label: '全角英数 → 半角', fn: (s) => s.replace(/[！-～]/g, m => String.fromCharCode(m.charCodeAt(0) - 0xFEE0)) },
+
+      { id: 'zen-han', label: '全角英数 → 半角', fn: (s) => toHalfWidthAlnum(s) },
       { id: 'kana-fw', label: '半角カタカナ → 全角カタカナ', fn: (s) => toFullWidthKana(s) },
       { id: 'kana-hw', label: '全角カタカナ → 半角カタカナ', fn: (s) => toHalfWidthKana(s) },
-      { id: 'all-hw', label: 'すべてを半角', fn: (s) => toAllHalfWidth(s) },
-      { id: 'all-fw', label: 'すべてを全角', fn: (s) => toAllFullWidth(s) }
+      { id: 'all-hw',  label: 'すべてを半角', fn: (s) => toAllHalfWidth(s) },
+      { id: 'all-fw',  label: 'すべてを全角', fn: (s) => toAllFullWidth(s) }
     ];
 
+    // =========================
+    // UX用: カテゴリ判定
+    // =========================
+    function getCategory(t) {
+      if (t.id.includes('enc')) return 'encode';
+      if (t.id.includes('dec') || t.id.includes('unesc')) return 'decode';
+      if (t.id.includes('kana') || t.id.includes('fw') || t.id.includes('hw') || t.id.includes('zen') || t.id.includes('all-')) return 'width';
+      return 'text';
+    }
+
+    // =========================
     // 初期カード生成
+    // =========================
     transformers.forEach(t => {
       const div = document.createElement('div');
       div.className = 'card';
+      div.id = 'card-' + t.id; // アンカー用
+
       div.innerHTML = `
-<div style="display: flex; justify-content: space-between; align-items: center;">
-<button class="copy-btn outline" onclick="copyText('${t.id}')">Copy</button>
-<h4>${t.label}</h4>
-</div>
-<div id="${t.id}" class="result-text"></div>
-`;
+        <div style="display:flex; justify-content:space-between; align-items:center; gap:10px;">
+          <button class="copy-btn outline" onclick="copyText('${t.id}')">Copy</button>
+          <h4>${t.label}</h4>
+        </div>
+        <div id="${t.id}" class="result-text"></div>
+      `;
       resultsContainer.appendChild(div);
     });
 
+    // =========================
+    // UX強化: アンカージャンプメニュー生成
+    // =========================
+    const anchorMenu   = document.getElementById('anchor-menu');
+    const anchorFilter = document.getElementById('anchor-filter');
+    const anchorClear  = document.getElementById('anchor-clear');
+    const anchorTop    = document.getElementById('anchor-top');
+
+    const btnMap = {}; // t.id -> button
+    transformers.forEach(t => {
+      const category = getCategory(t);
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = `outline cat-${category}`;
+      btn.innerText = t.label;
+      btn.dataset.key = (t.label + ' ' + t.id).toLowerCase();
+
+      btn.onclick = () => {
+        const card = document.getElementById('card-' + t.id);
+        if (!card) return;
+
+        card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+        // ジャンプ後の視認性向上
+        card.classList.remove('highlight');
+        void card.offsetWidth; // reflow
+        card.classList.add('highlight');
+      };
+
+      anchorMenu.appendChild(btn);
+      btnMap[t.id] = btn;
+    });
+
+    // フィルタ（ボタン絞り込み）
+    function applyAnchorFilter() {
+      const q = (anchorFilter.value || '').trim().toLowerCase();
+      Object.entries(btnMap).forEach(([id, btn]) => {
+        btn.style.display = (!q || btn.dataset.key.includes(q)) ? '' : 'none';
+      });
+    }
+    anchorFilter.addEventListener('input', applyAnchorFilter);
+    anchorClear.addEventListener('click', () => { anchorFilter.value = ''; applyAnchorFilter(); anchorFilter.focus(); });
+    anchorTop.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
+
+    // =========================
+    // UX強化: スクロール連動で現在位置をハイライト
+    // =========================
+    const cards = Array.from(document.querySelectorAll('.card'));
+    const observer = new IntersectionObserver(entries => {
+      // 画面中央近辺に入ったカードをアクティブ扱い
+      const visible = entries.filter(e => e.isIntersecting);
+      if (!visible.length) return;
+
+      // 一番intersectionRatioが高いものを採用
+      visible.sort((a, b) => b.intersectionRatio - a.intersectionRatio);
+      const top = visible[0];
+      const id = top.target.id.replace('card-', '');
+
+      Object.values(btnMap).forEach(b => b.classList.remove('active'));
+      if (btnMap[id]) btnMap[id].classList.add('active');
+    }, { rootMargin: '-35% 0px -55% 0px', threshold: [0.15, 0.3, 0.5, 0.75] });
+
+    cards.forEach(c => observer.observe(c));
+
+    // =========================
     // リアルタイム更新処理
+    // =========================
     input.addEventListener('input', () => {
       const val = input.value;
 
-      // 統計更新
       document.getElementById('count-char').innerText = val.length;
       document.getElementById('count-byte').innerText = new TextEncoder().encode(val).length;
-      document.getElementById('count-line').innerText = val ? val.split('\n').length : 0;
+      document.getElementById('count-line').innerText = val ? val.split('\n').length : 1;
 
-      // 各変換実行
       transformers.forEach(t => {
         document.getElementById(t.id).innerText = val ? t.fn(val) : '';
       });
     });
 
+    // =========================
     // コピー機能
+    // =========================
     async function copyText(id) {
       const text = document.getElementById(id).innerText;
       if (!text) return;
       await navigator.clipboard.writeText(text);
+
       const btn = document.querySelector(`button[onclick="copyText('${id}')"]`);
       const originalText = btn.innerText;
       btn.innerText = 'Copied!';
       setTimeout(() => btn.innerText = originalText, 1000);
     }
   </script>
-
 </body>
-
 </html>
