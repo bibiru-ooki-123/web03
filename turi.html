@@ -1,0 +1,683 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+<title>釣り単位変換 | Tackle Unit Sounder</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #071820;
+    --bg-deep: #04101580;
+    --panel: #0E2C38;
+    --panel-2: #123847;
+    --line: rgba(62,230,181,0.16);
+    --accent: #3EE6B5;
+    --accent-dim: #2AA484;
+    --brass: #C9A66B;
+    --text: #E8F1EE;
+    --muted: #7FA3AC;
+    --warn: #E8A94C;
+    --radius: 14px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:
+      radial-gradient(ellipse at 50% -10%, #123241 0%, var(--bg) 55%),
+      repeating-linear-gradient(0deg, rgba(62,230,181,0.035) 0px, rgba(62,230,181,0.035) 1px, transparent 1px, transparent 28px),
+      repeating-linear-gradient(90deg, rgba(62,230,181,0.035) 0px, rgba(62,230,181,0.035) 1px, transparent 1px, transparent 28px);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Yu Gothic", "Segoe UI", sans-serif;
+    min-height:100vh;
+    padding: 20px 14px 60px;
+  }
+  .wrap{max-width:520px;margin:0 auto;}
+
+  /* Header / sonar sweep */
+  header{
+    position:relative;
+    overflow:hidden;
+    background: linear-gradient(180deg, #0C2530 0%, #081b23 100%);
+    border:1px solid var(--line);
+    border-radius: var(--radius);
+    padding:22px 20px 18px;
+    margin-bottom:18px;
+  }
+  header::before{
+    content:"";
+    position:absolute; inset:0;
+    background: linear-gradient(100deg, transparent 40%, rgba(62,230,181,0.10) 50%, transparent 60%);
+    background-size: 220% 100%;
+    animation: sweep 5s linear infinite;
+    pointer-events:none;
+  }
+  @keyframes sweep{
+    0%{ background-position: 140% 0; }
+    100%{ background-position: -40% 0; }
+  }
+  .eyebrow{
+    font-family:'JetBrains Mono', monospace;
+    font-size:11px;
+    letter-spacing:.14em;
+    color: var(--accent);
+    text-transform:uppercase;
+    display:flex;
+    align-items:center;
+    gap:8px;
+  }
+  .eyebrow .dot{
+    width:7px;height:7px;border-radius:50%;
+    background: var(--accent);
+    box-shadow: 0 0 8px 2px var(--accent);
+    animation: blink 2.4s ease-in-out infinite;
+  }
+  @keyframes blink{ 0%,100%{opacity:1;} 50%{opacity:.35;} }
+  h1{
+    font-family:'Oswald', "Hiragino Sans", "Yu Gothic", sans-serif;
+    font-weight:600;
+    font-size: 26px;
+    letter-spacing:.01em;
+    margin: 8px 0 4px;
+  }
+  header p{
+    margin:0;
+    color: var(--muted);
+    font-size:13px;
+    line-height:1.5;
+  }
+
+  /* Tabs */
+  .tabs{
+    display:flex;
+    gap:6px;
+    margin-bottom:16px;
+    background: var(--panel);
+    border:1px solid var(--line);
+    border-radius: 12px;
+    padding:5px;
+  }
+  .tab{
+    flex:1;
+    text-align:center;
+    padding:10px 6px;
+    font-family:'Oswald', "Hiragino Sans", "Yu Gothic", sans-serif;
+    font-size:13px;
+    font-weight:500;
+    letter-spacing:.02em;
+    color: var(--muted);
+    background:transparent;
+    border:none;
+    border-radius:8px;
+    cursor:pointer;
+    transition: all .18s ease;
+  }
+  .tab.active{
+    background: linear-gradient(180deg, #175A47, #0F3D33);
+    color: var(--accent);
+    box-shadow: inset 0 0 0 1px rgba(62,230,181,0.35);
+  }
+  .tab:not(.active):hover{ color: var(--text); }
+
+  /* Panel / card */
+  .panel{
+    background: var(--panel);
+    border:1px solid var(--line);
+    border-radius: var(--radius);
+    padding:18px;
+    margin-bottom:14px;
+    display:none;
+  }
+  .panel.active{ display:block; }
+
+  .field-row{ display:flex; gap:10px; margin-bottom:12px; }
+  .field{ flex:1; }
+  label{
+    display:block;
+    font-size:11px;
+    letter-spacing:.08em;
+    text-transform:uppercase;
+    color: var(--muted);
+    font-family:'JetBrains Mono', monospace;
+    margin-bottom:6px;
+  }
+  select, input[type=number], input[type=text]{
+    width:100%;
+    background: #081E27;
+    border:1px solid var(--line);
+    color: var(--text);
+    border-radius:9px;
+    padding:11px 12px;
+    font-size:15px;
+    font-family:'JetBrains Mono', monospace;
+    outline:none;
+    transition: border-color .15s ease;
+    appearance:none;
+    -webkit-appearance:none;
+  }
+  select{
+    background-image: linear-gradient(45deg, transparent 50%, var(--accent) 50%), linear-gradient(135deg, var(--accent) 50%, transparent 50%);
+    background-position: calc(100% - 18px) center, calc(100% - 13px) center;
+    background-size: 5px 5px, 5px 5px;
+    background-repeat:no-repeat;
+    padding-right:32px;
+  }
+  select:focus, input:focus{ border-color: var(--accent); }
+
+  .segmented{
+    display:flex;
+    background:#081E27;
+    border:1px solid var(--line);
+    border-radius:9px;
+    padding:3px;
+    margin-bottom:12px;
+  }
+  .segmented button{
+    flex:1;
+    background:transparent;
+    border:none;
+    color: var(--muted);
+    padding:9px 6px;
+    font-size:12.5px;
+    font-family:'JetBrains Mono', monospace;
+    border-radius:7px;
+    cursor:pointer;
+  }
+  .segmented button.active{
+    background: var(--accent-dim);
+    color:#04140F;
+    font-weight:700;
+  }
+
+  .swap-btn{
+    display:flex; align-items:center; justify-content:center;
+    width:38px; height:38px;
+    align-self:flex-end;
+    margin-bottom:12px;
+    background:#081E27;
+    border:1px solid var(--line);
+    border-radius:9px;
+    color: var(--accent);
+    cursor:pointer;
+    font-size:16px;
+    user-select:none;
+  }
+  .swap-btn:hover{ border-color: var(--accent); }
+
+  /* Readout screen */
+  .screen{
+    background: #04120E;
+    border:1px solid rgba(62,230,181,0.28);
+    border-radius:11px;
+    padding:16px 16px 14px;
+    box-shadow: inset 0 0 22px rgba(0,0,0,0.55);
+    position:relative;
+    overflow:hidden;
+  }
+  .screen::after{
+    content:"";
+    position:absolute; inset:0;
+    background: repeating-linear-gradient(0deg, rgba(0,0,0,0.18) 0px, rgba(0,0,0,0.18) 1px, transparent 1px, transparent 3px);
+    pointer-events:none;
+  }
+  .screen-label{
+    font-family:'JetBrains Mono', monospace;
+    font-size:10px;
+    letter-spacing:.12em;
+    text-transform:uppercase;
+    color: var(--accent-dim);
+    margin-bottom:6px;
+  }
+  .screen-value{
+    font-family:'JetBrains Mono', monospace;
+    font-weight:700;
+    font-size:30px;
+    color: var(--accent);
+    text-shadow: 0 0 10px rgba(62,230,181,0.55);
+    line-height:1.15;
+    word-break:break-all;
+  }
+  .screen-value .unit{
+    font-size:15px;
+    color: var(--brass);
+    margin-left:6px;
+    text-shadow:none;
+  }
+  .screen-sub{
+    margin-top:10px;
+    padding-top:10px;
+    border-top: 1px dashed rgba(62,230,181,0.2);
+    display:flex;
+    justify-content:space-between;
+    font-family:'JetBrains Mono', monospace;
+    font-size:13px;
+    color: var(--muted);
+  }
+  .screen-sub b{ color: var(--text); font-weight:600; }
+
+  .note{
+    font-size:11.5px;
+    color: var(--muted);
+    line-height:1.6;
+    margin-top:12px;
+  }
+  .note.warn{ color: var(--warn); }
+
+  .divider-label{
+    font-family:'JetBrains Mono', monospace;
+    font-size:11px;
+    letter-spacing:.1em;
+    color: var(--brass);
+    text-transform:uppercase;
+    margin: 18px 0 10px;
+    display:flex;
+    align-items:center;
+    gap:8px;
+  }
+  .divider-label::after{
+    content:"";
+    flex:1;
+    height:1px;
+    background: rgba(201,166,107,0.28);
+  }
+
+  footer{
+    text-align:center;
+    color: var(--muted);
+    font-size:11px;
+    font-family:'JetBrains Mono', monospace;
+    margin-top:22px;
+    letter-spacing:.04em;
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    header::before{ animation:none; }
+    .eyebrow .dot{ animation:none; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="eyebrow"><span class="dot"></span>TACKLE UNIT SOUNDER</div>
+    <h1>釣り単位変換</h1>
+    <p>号数・オモリ・長さ・重さを釣り場ですぐ変換。ライン号数は目安値です。</p>
+  </header>
+
+  <div class="tabs">
+    <button class="tab active" data-tab="line">ライン号数</button>
+    <button class="tab" data-tab="sinker">オモリ号数</button>
+    <button class="tab" data-tab="general">長さ・重さ</button>
+  </div>
+
+  <!-- LINE TAB -->
+  <section class="panel active" id="panel-line">
+    <div class="segmented" id="line-type-seg">
+      <button class="active" data-type="pe">PEライン</button>
+      <button data-type="nylon">ナイロン/フロロ</button>
+    </div>
+
+    <div class="field-row">
+      <div class="field">
+        <label>号数 (GO)</label>
+        <input type="number" id="line-go" step="0.05" min="0" value="1.5">
+      </div>
+    </div>
+
+    <div class="screen">
+      <div class="screen-label">Diameter / Strength</div>
+      <div class="screen-value" id="line-mm-out">--<span class="unit">mm</span></div>
+      <div class="screen-sub">
+        <span>強度目安</span>
+        <b id="line-lb-out">-- lb</b>
+      </div>
+    </div>
+    <div class="note" id="line-range-note"></div>
+
+    <div class="divider-label">強度(lb)から号数を検索</div>
+    <div class="field-row">
+      <div class="field">
+        <label>強度 (LB)</label>
+        <input type="number" id="line-lb-in" step="1" min="0" value="20">
+      </div>
+    </div>
+    <div class="screen">
+      <div class="screen-label">Estimated GO Number</div>
+      <div class="screen-value" id="line-go-out">--<span class="unit">号</span></div>
+    </div>
+    <div class="note">※メーカー・製法により実際の値は前後します。あくまで参考値としてご利用ください。</div>
+  </section>
+
+  <!-- SINKER TAB -->
+  <section class="panel" id="panel-sinker">
+    <div class="field-row">
+      <div class="field">
+        <label>オモリ号数 (GO)</label>
+        <input type="number" id="sinker-go" step="0.5" min="0" value="3">
+      </div>
+    </div>
+    <div class="screen">
+      <div class="screen-label">Weight</div>
+      <div class="screen-value" id="sinker-g-out">--<span class="unit">g</span></div>
+      <div class="screen-sub">
+        <span>oz換算</span>
+        <b id="sinker-oz-out">-- oz</b>
+      </div>
+    </div>
+
+    <div class="divider-label">gからオモリ号数を逆算</div>
+    <div class="field-row">
+      <div class="field">
+        <label>重さ (G)</label>
+        <input type="number" id="sinker-g-in" step="0.5" min="0" value="10">
+      </div>
+    </div>
+    <div class="screen">
+      <div class="screen-label">GO Number</div>
+      <div class="screen-value" id="sinker-go-out">--<span class="unit">号</span></div>
+    </div>
+    <div class="note">1号 = 3.75g（匁基準）で算出しています。</div>
+  </section>
+
+  <!-- GENERAL TAB -->
+  <section class="panel" id="panel-general">
+    <div class="segmented" id="general-cat-seg">
+      <button class="active" data-cat="length">長さ</button>
+      <button data-cat="weight">重さ</button>
+    </div>
+
+    <div class="field-row">
+      <div class="field">
+        <label>数値</label>
+        <input type="number" id="gen-value" step="any" value="1">
+      </div>
+    </div>
+
+    <div class="field-row" style="align-items:flex-end;">
+      <div class="field">
+        <label>変換元</label>
+        <select id="gen-from"></select>
+      </div>
+      <div class="swap-btn" id="gen-swap" title="入れ替え">⇅</div>
+      <div class="field">
+        <label>変換先</label>
+        <select id="gen-to"></select>
+      </div>
+    </div>
+
+    <div class="screen">
+      <div class="screen-label">Result</div>
+      <div class="screen-value" id="gen-out">--</div>
+    </div>
+    <div class="note">尺・寸・貫・匁などの和単位も選択できます。</div>
+  </section>
+
+  <footer>目安値としてご活用ください</footer>
+</div>
+
+<script>
+(function(){
+
+  /* ---------- Tabs ---------- */
+  document.querySelectorAll('.tab').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      document.querySelectorAll('.tab').forEach(function(b){ b.classList.remove('active'); });
+      document.querySelectorAll('.panel').forEach(function(p){ p.classList.remove('active'); });
+      btn.classList.add('active');
+      document.getElementById('panel-' + btn.dataset.tab).classList.add('active');
+    });
+  });
+
+  /* ---------- Generic interpolation helper ----------
+     table: array of rows sorted ascending by `xKey`
+     returns interpolated y for given x (clamped, with outOfRange flag) */
+  function interp(table, xKey, yKey, x){
+    var out = { value: null, outOfRange: false };
+    if (x <= table[0][xKey]) {
+      if (x < table[0][xKey]) out.outOfRange = true;
+      out.value = table[0][yKey];
+      return out;
+    }
+    var last = table[table.length - 1];
+    if (x >= last[xKey]) {
+      if (x > last[xKey]) out.outOfRange = true;
+      out.value = last[yKey];
+      return out;
+    }
+    for (var i = 0; i < table.length - 1; i++) {
+      var a = table[i], b = table[i+1];
+      if (x >= a[xKey] && x <= b[xKey]) {
+        var t = (x - a[xKey]) / (b[xKey] - a[xKey]);
+        out.value = a[yKey] + t * (b[yKey] - a[yKey]);
+        return out;
+      }
+    }
+    return out;
+  }
+
+  /* ---------- LINE TAB ---------- */
+  var lineTables = {
+    pe: [
+      {go:0.3, mm:0.090, lb:6},
+      {go:0.4, mm:0.104, lb:8},
+      {go:0.5, mm:0.117, lb:10},
+      {go:0.6, mm:0.128, lb:12},
+      {go:0.8, mm:0.148, lb:16},
+      {go:1.0, mm:0.165, lb:20},
+      {go:1.2, mm:0.181, lb:23},
+      {go:1.5, mm:0.205, lb:30},
+      {go:2.0, mm:0.235, lb:35},
+      {go:2.5, mm:0.260, lb:40},
+      {go:3.0, mm:0.285, lb:50},
+      {go:4.0, mm:0.330, lb:60},
+      {go:5.0, mm:0.370, lb:70},
+      {go:6.0, mm:0.405, lb:80},
+      {go:8.0, mm:0.470, lb:100},
+      {go:10.0, mm:0.520, lb:130}
+    ],
+    nylon: [
+      {go:0.8, mm:0.148, lb:3.5},
+      {go:1.0, mm:0.165, lb:4},
+      {go:1.2, mm:0.185, lb:5},
+      {go:1.5, mm:0.205, lb:6},
+      {go:2.0, mm:0.235, lb:8},
+      {go:2.5, mm:0.260, lb:10},
+      {go:3.0, mm:0.285, lb:12},
+      {go:4.0, mm:0.330, lb:16},
+      {go:5.0, mm:0.370, lb:20},
+      {go:6.0, mm:0.405, lb:25},
+      {go:8.0, mm:0.470, lb:30},
+      {go:10.0, mm:0.520, lb:40},
+      {go:12.0, mm:0.570, lb:50},
+      {go:14.0, mm:0.620, lb:60},
+      {go:16.0, mm:0.660, lb:70},
+      {go:20.0, mm:0.740, lb:85}
+    ]
+  };
+
+  var currentLineType = 'pe';
+  document.querySelectorAll('#line-type-seg button').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      document.querySelectorAll('#line-type-seg button').forEach(function(b){b.classList.remove('active');});
+      btn.classList.add('active');
+      currentLineType = btn.dataset.type;
+      updateLine();
+      updateLineReverse();
+    });
+  });
+
+  var lineGoInput = document.getElementById('line-go');
+  var lineMmOut = document.getElementById('line-mm-out');
+  var lineLbOut = document.getElementById('line-lb-out');
+  var lineRangeNote = document.getElementById('line-range-note');
+
+  function updateLine(){
+    var go = parseFloat(lineGoInput.value);
+    var table = lineTables[currentLineType];
+    if (isNaN(go) || go < 0) {
+      lineMmOut.innerHTML = '--<span class="unit">mm</span>';
+      lineLbOut.textContent = '-- lb';
+      lineRangeNote.textContent = '';
+      return;
+    }
+    var mm = interp(table, 'go', 'mm', go);
+    var lb = interp(table, 'go', 'lb', go);
+    lineMmOut.innerHTML = mm.value.toFixed(3) + '<span class="unit">mm</span>';
+    lineLbOut.textContent = lb.value.toFixed(1) + ' lb';
+    lineRangeNote.textContent = (mm.outOfRange || lb.outOfRange)
+      ? '※参考テーブルの範囲外のため、端の値で概算しています。'
+      : '';
+    lineRangeNote.className = (mm.outOfRange || lb.outOfRange) ? 'note warn' : 'note';
+  }
+  lineGoInput.addEventListener('input', updateLine);
+
+  var lineLbInInput = document.getElementById('line-lb-in');
+  var lineGoOut = document.getElementById('line-go-out');
+  function updateLineReverse(){
+    var lb = parseFloat(lineLbInInput.value);
+    var table = lineTables[currentLineType];
+    if (isNaN(lb) || lb < 0) {
+      lineGoOut.innerHTML = '--<span class="unit">号</span>';
+      return;
+    }
+    var go = interp(table, 'lb', 'go', lb);
+    lineGoOut.innerHTML = go.value.toFixed(2) + '<span class="unit">号</span>';
+  }
+  lineLbInInput.addEventListener('input', updateLineReverse);
+
+  updateLine();
+  updateLineReverse();
+
+  /* ---------- SINKER TAB (1号 = 3.75g) ---------- */
+  var GO_TO_G = 3.75;
+  var G_TO_OZ = 28.3495;
+
+  var sinkerGoInput = document.getElementById('sinker-go');
+  var sinkerGOut = document.getElementById('sinker-g-out');
+  var sinkerOzOut = document.getElementById('sinker-oz-out');
+  function updateSinker(){
+    var go = parseFloat(sinkerGoInput.value);
+    if (isNaN(go) || go < 0) {
+      sinkerGOut.innerHTML = '--<span class="unit">g</span>';
+      sinkerOzOut.textContent = '-- oz';
+      return;
+    }
+    var g = go * GO_TO_G;
+    sinkerGOut.innerHTML = g.toFixed(2) + '<span class="unit">g</span>';
+    sinkerOzOut.textContent = (g / G_TO_OZ).toFixed(3) + ' oz';
+  }
+  sinkerGoInput.addEventListener('input', updateSinker);
+
+  var sinkerGInInput = document.getElementById('sinker-g-in');
+  var sinkerGoOut = document.getElementById('sinker-go-out');
+  function updateSinkerReverse(){
+    var g = parseFloat(sinkerGInInput.value);
+    if (isNaN(g) || g < 0) {
+      sinkerGoOut.innerHTML = '--<span class="unit">号</span>';
+      return;
+    }
+    sinkerGoOut.innerHTML = (g / GO_TO_G).toFixed(2) + '<span class="unit">号</span>';
+  }
+  sinkerGInInput.addEventListener('input', updateSinkerReverse);
+
+  updateSinker();
+  updateSinkerReverse();
+
+  /* ---------- GENERAL TAB ---------- */
+  var units = {
+    length: {
+      base: 'mm',
+      list: [
+        {id:'mm', label:'mm (ミリ)', factor:1},
+        {id:'cm', label:'cm (センチ)', factor:10},
+        {id:'m',  label:'m (メートル)', factor:1000},
+        {id:'in', label:'inch (インチ)', factor:25.4},
+        {id:'ft', label:'ft (フィート)', factor:304.8},
+        {id:'shaku', label:'尺 (しゃく)', factor:303.03},
+        {id:'sun', label:'寸 (すん)', factor:30.303}
+      ]
+    },
+    weight: {
+      base: 'g',
+      list: [
+        {id:'g',  label:'g (グラム)', factor:1},
+        {id:'kg', label:'kg (キログラム)', factor:1000},
+        {id:'oz', label:'oz (オンス)', factor:28.3495},
+        {id:'lb', label:'lb (ポンド)', factor:453.592},
+        {id:'monme', label:'匁 (もんめ)', factor:3.75},
+        {id:'kan', label:'貫 (かん)', factor:3750}
+      ]
+    }
+  };
+
+  var genCat = 'length';
+  var genFromSel = document.getElementById('gen-from');
+  var genToSel = document.getElementById('gen-to');
+  var genValueInput = document.getElementById('gen-value');
+  var genOut = document.getElementById('gen-out');
+
+  function populateGenSelects(){
+    var list = units[genCat].list;
+    genFromSel.innerHTML = '';
+    genToSel.innerHTML = '';
+    list.forEach(function(u, i){
+      var o1 = document.createElement('option');
+      o1.value = u.id; o1.textContent = u.label;
+      var o2 = o1.cloneNode(true);
+      genFromSel.appendChild(o1);
+      genToSel.appendChild(o2);
+    });
+    genFromSel.selectedIndex = 0;
+    genToSel.selectedIndex = Math.min(1, list.length - 1);
+  }
+
+  function findUnit(id){
+    return units[genCat].list.find(function(u){ return u.id === id; });
+  }
+
+  function updateGeneral(){
+    var val = parseFloat(genValueInput.value);
+    var fromU = findUnit(genFromSel.value);
+    var toU = findUnit(genToSel.value);
+    if (isNaN(val) || !fromU || !toU) {
+      genOut.textContent = '--';
+      return;
+    }
+    var base = val * fromU.factor;
+    var result = base / toU.factor;
+    var decimals = Math.abs(result) < 1 ? 5 : (Math.abs(result) < 100 ? 3 : 2);
+    genOut.innerHTML = (Math.round(result * Math.pow(10, decimals)) / Math.pow(10, decimals))
+      .toLocaleString('ja-JP', {maximumFractionDigits: decimals})
+      + '<span class="unit">' + toU.id + '</span>';
+  }
+
+  document.querySelectorAll('#general-cat-seg button').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      document.querySelectorAll('#general-cat-seg button').forEach(function(b){b.classList.remove('active');});
+      btn.classList.add('active');
+      genCat = btn.dataset.cat;
+      populateGenSelects();
+      updateGeneral();
+    });
+  });
+
+  document.getElementById('gen-swap').addEventListener('click', function(){
+    var f = genFromSel.value, t = genToSel.value;
+    genFromSel.value = t;
+    genToSel.value = f;
+    updateGeneral();
+  });
+
+  genValueInput.addEventListener('input', updateGeneral);
+  genFromSel.addEventListener('change', updateGeneral);
+  genToSel.addEventListener('change', updateGeneral);
+
+  populateGenSelects();
+  updateGeneral();
+
+})();
+</script>
+</body>
+</html>
