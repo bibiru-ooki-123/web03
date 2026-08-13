@@ -300,10 +300,6 @@
 <body>
 <div class="wrap">
 
-  <header>
-    <div class="eyebrow"><span class="dot"></span><h1>釣り単位変換</h1></div>
-  </header>
-
   <div class="tabs">
     <button class="tab active" data-tab="line">ライン号数</button>
     <button class="tab" data-tab="sinker">オモリ号数</button>
@@ -345,7 +341,6 @@
       <div class="screen-label">Estimated GO Number</div>
       <div class="screen-value" id="line-go-out">--<span class="unit">号</span></div>
     </div>
-    <div class="note">※メーカー・製法により実際の値は前後します。あくまで参考値としてご利用ください。</div>
   </section>
 
   <!-- SINKER TAB -->
@@ -353,7 +348,7 @@
     <div class="field-row">
       <div class="field">
         <label>オモリ号数 (GO)</label>
-        <input type="number" id="sinker-go" step="0.5" min="0" value="3">
+        <input type="number" id="sinker-go" step="0.5" min="0" value="30">
       </div>
     </div>
     <div class="screen">
@@ -411,8 +406,6 @@
     </div>
     <div class="note">尺・寸・貫・匁などの和単位も選択できます。</div>
   </section>
-
-  <footer>目安値としてご活用ください</footer>
 </div>
 
 <script>
