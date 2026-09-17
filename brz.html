@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Braze Quiz - Marketing Strategy Expert</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    min-height: 100vh;
+    background: linear-gradient(135deg, #1A1A2E 0%, #16213E 50%, #0a192f 100%);
+    font-family: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+    color: #e8eaf0;
+  }
+  header {
+    background: linear-gradient(90deg, #1A1A2E 0%, #16213E 100%);
+    border-bottom: 2px solid #FF6B35;
+    padding: 16px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 2px 20px rgba(0,0,0,0.4);
+  }
+  .logo-text { font-size: 18px; font-weight: 700; color: #fff; letter-spacing: 0.02em; }
+  .logo-sub { font-size: 11px; color: #FF6B35; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; }
+  .progress-wrap { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
+  .progress-label { font-size: 12px; color: rgba(255,255,255,0.4); }
+  .progress-bar { height: 4px; background: rgba(255,255,255,0.1); border-radius: 2px; width: 200px; overflow: hidden; }
+  .progress-fill { height: 100%; background: linear-gradient(90deg, #FF6B35, #E94560); border-radius: 2px; transition: width 0.4s ease; }
+  main { max-width: 780px; margin: 0 auto; padding: 32px 20px 60px; }
+  .card {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 16px;
+    padding: 32px;
+    backdrop-filter: blur(10px);
+    box-shadow: 0 8px 40px rgba(0,0,0,0.3);
+  }
+
+  /* Start screen */
+  .start-card { text-align: center; padding: 60px 32px; }
+  .start-emoji { font-size: 48px; margin-bottom: 20px; }
+  .start-title { font-size: 28px; font-weight: 800; color: #fff; margin-bottom: 8px; }
+  .start-sub { font-size: 15px; color: rgba(255,255,255,0.5); margin-bottom: 40px; line-height: 1.6; }
+  .start-stats { display: flex; justify-content: center; gap: 40px; margin-bottom: 40px; flex-wrap: wrap; }
+  .stat-item { text-align: center; }
+  .stat-num { font-size: 32px; font-weight: 700; color: #fff; }
+  .stat-desc { font-size: 12px; color: rgba(255,255,255,0.4); letter-spacing: 0.04em; }
+
+  /* Quiz screen */
+  .question-meta { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
+  .q-num { font-size: 13px; color: rgba(255,255,255,0.4); font-weight: 500; }
+  .type-badge {
+    font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase;
+    padding: 4px 10px; border-radius: 20px;
+  }
+  .type-multi { background: rgba(233,69,96,0.2); color: #E94560; border: 1px solid #E94560; }
+  .type-single { background: rgba(255,107,53,0.2); color: #FF6B35; border: 1px solid #FF6B35; }
+  .question-text { font-size: 16px; line-height: 1.75; color: #dde1ee; margin-bottom: 28px; white-space: pre-wrap; }
+  .choices { display: flex; flex-direction: column; gap: 10px; margin-bottom: 28px; }
+  .choice-btn {
+    display: flex; align-items: flex-start; gap: 14px;
+    padding: 14px 18px; border-radius: 10px;
+    border: 1px solid rgba(255,255,255,0.1);
+    background: rgba(255,255,255,0.03);
+    color: #c8cde0; cursor: pointer; text-align: left;
+    font-size: 14px; line-height: 1.6;
+    transition: all 0.15s ease; width: 100%;
+    font-family: inherit;
+  }
+  .choice-btn:hover:not(:disabled) { border-color: rgba(255,107,53,0.4); background: rgba(255,107,53,0.06); }
+  .choice-btn.selected { border-color: #FF6B35; background: rgba(255,107,53,0.12); color: #fff; }
+  .choice-btn.correct { border-color: #4caf50; background: rgba(76,175,80,0.15); color: #fff; }
+  .choice-btn.wrong { border-color: #ef5350; background: rgba(239,83,80,0.15); color: #fff; }
+  .choice-btn.missed { border-color: #4caf50; background: rgba(76,175,80,0.08); color: #c8cde0; }
+  .choice-key {
+    min-width: 26px; height: 26px; border-radius: 6px;
+    background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.5);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px; font-weight: 700; flex-shrink: 0; margin-top: 1px;
+  }
+  .choice-btn.selected .choice-key { background: #FF6B35; color: #fff; }
+  .choice-btn.correct .choice-key { background: #4caf50; color: #fff; }
+  .choice-btn.wrong .choice-key { background: #ef5350; color: #fff; }
+  .choice-btn.missed .choice-key { background: rgba(76,175,80,0.3); color: #4caf50; }
+  .choice-text { flex: 1; }
+  .choice-icon { margin-left: auto; flex-shrink: 0; font-size: 16px; }
+
+  /* Explanation */
+  .explanation-box {
+    margin-top: 24px; padding: 20px 24px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 12px;
+  }
+  .explanation-title { font-size: 12px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #FF6B35; margin-bottom: 12px; }
+  .explanation-text { font-size: 13px; line-height: 1.75; color: #b0b8d0; white-space: pre-wrap; }
+  .links-title { font-size: 12px; font-weight: 600; color: rgba(255,255,255,0.4); margin-top: 14px; margin-bottom: 8px; letter-spacing: 0.06em; text-transform: uppercase; }
+  .links-wrap { display: flex; flex-wrap: wrap; gap: 8px; }
+  .ref-link { color: #FF6B35; text-decoration: none; font-size: 13px; }
+  .ref-link:hover { text-decoration: underline; }
+
+  /* Action row */
+  .action-row { display: flex; justify-content: flex-end; margin-top: 24px; }
+  .btn {
+    padding: 12px 28px; border-radius: 10px; border: none;
+    font-size: 14px; font-weight: 600; cursor: pointer;
+    letter-spacing: 0.02em; font-family: inherit;
+    background: linear-gradient(135deg, #FF6B35, #E94560);
+    color: #fff; transition: opacity 0.15s;
+  }
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  .btn:hover:not(:disabled) { opacity: 0.85; }
+
+  /* Result screen */
+  .result-card { text-align: center; padding: 48px 32px; }
+  .result-emoji { font-size: 48px; margin-bottom: 16px; }
+  .result-score {
+    font-size: 72px; font-weight: 800; line-height: 1;
+    background: linear-gradient(135deg, #FF6B35, #E94560);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    margin-bottom: 8px;
+  }
+  .result-label { font-size: 14px; color: rgba(255,255,255,0.5); margin-bottom: 24px; }
+  .grade-badge {
+    font-size: 14px; font-weight: 600; padding: 10px 24px;
+    border-radius: 30px; display: inline-block; margin-bottom: 32px;
+  }
+  .grade-pass { background: rgba(76,175,80,0.2); color: #4caf50; border: 1px solid #4caf50; }
+  .grade-near { background: rgba(255,152,0,0.2); color: #ff9800; border: 1px solid #ff9800; }
+  .grade-fail { background: rgba(239,83,80,0.2); color: #ef5350; border: 1px solid #ef5350; }
+  .result-stats { display: flex; justify-content: center; gap: 40px; margin-bottom: 40px; flex-wrap: wrap; }
+  .result-stat-num { font-size: 32px; font-weight: 700; }
+  .color-green { color: #4caf50; }
+  .color-red { color: #ef5350; }
+  .color-white { color: #fff; }
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <div class="logo-text">Braze Quiz</div>
+    <div class="logo-sub">Marketing Strategy Expert</div>
+  </div>
+  <div class="progress-wrap" id="progressWrap" style="display:none">
+    <span class="progress-label" id="progressLabel"></span>
+    <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+  </div>
+</header>
+
+<main>
+  <div class="card" id="appContainer"></div>
+</main>
+
+<script>
+		const QUESTIONS_DATA = [
+			{ "id": 1, "type": "複数選択", "question": "あなたは、顧客生涯価値（LTV）が高い顧客にサプライズオファーを提供したいと考えていますが、あなたのブランドがこのペルソナの定義にまだ同意していません。あなたは、Brazeでこのペルソナを定義し、セグメント化するためのアイデアを得たいと考えています。\n必要なすべての購入データとカスタムデータがリアルタイムでBrazeに渡されていると仮定します。\nセグメントのフィルターとして機能する定義はどれですか？（2つ選択してください。）", "choices": { "A": "ユーザープロファイルに「High LTV」というタグが付いている。", "B": "セッション数が10を超えている。", "C": "500ドル以上使った。", "D": "10回以上購入した。", "E": "カスタムイベント「order」が「True」である。" }, "correct": ["C", "D"], "explanation": "回答\nC. 500ドル以上使った\nD. 10回以上購入した\nどちらも購入行動にもとづき、LTVが高い顧客を直接定義できます。\nC: Money Spent フィルターで、累計支出額が $500 以上のユーザーを抽出できます。\nD: Total Number of Purchases フィルターで、累計購入回数が 10 回以上のユーザーを抽出できます。\nA は、あらかじめ「High LTV」タグを付ける運用が必要なため、定義を検討している段階の条件にはなりません。\nB は利用頻度の指標であり、LTVそのものを表しません。\nE のカスタムイベントは、発生回数や最終発生日時などで条件化します。「True」という条件だけではLTVを定義できません。", "links": [{ "text": "セグメンテーションフィルター", "url": "https://www.braze.com/docs/user_guide/audience/segments/segmentation_filters?utm_source=operator_user&utm_medium=dashboard" }, { "text": "カスタムイベント", "url": "https://www.braze.com/docs/user_guide/data/activation/events/custom_events?utm_source=operator_user&utm_medium=dashboard" }] }, 
+			{ "id": 2, "type": "複数選択", "question": "パーソナライゼーションとデータ取り込みを除外した場合、Brazeの垂直統合テックスタックを構成する残りの3つのレイヤーはどれですか？（3つ選択してください。）", "choices": { "A": "オーケストレーション（Orchestration）", "B": "アクション（Action）", "C": "セグメンテーション（Segmentation）", "D": "開発（Development）", "E": "分類（Classification）" }, "correct": ["A", "B", "E"], "explanation": "回答\nA. オーケストレーション\nB. アクション\nE. 分類\n解説\nBrazeの垂直統合テックスタックは、次のレイヤーで構成されます。\nデータ取り込み\n分類\nオーケストレーション\nパーソナライゼーション\nアクション\nエクスポート\n設問では「データ取り込み」と「パーソナライゼーション」を除外しているため、選択肢にある残りの該当レイヤーは 分類・オーケストレーション・アクション です。\nC. セグメンテーション は「分類」レイヤーで行う機能であり、独立したレイヤー名ではありません。\nD. 開発 はレイヤー名ではありません。", "links": [{ "text": "アーキテクチャ概要", "url": "https://www.braze.com/docs/developer_guide/getting_started/architecture_overview?utm_source=operator_user&utm_medium=dashboard" }] }, 
+			{ "id": 3, "type": "単一選択", "question": "あなたのブランドは、サイトでの閲覧を放棄した訪問者に再度アプローチするためのクロスチャネルジャーニーを作成しています。このジャーニーの一環として、閲覧から1時間以内にユーザーがカートにアイテムを追加したかどうかを確認したいと考えています。ユーザーがアイテムを追加している場合に不要なフォローアップメッセージを送信するのを避けるために、放棄された閲覧ジャーニーからこのユーザーを削除する必要があります。\nこれを評価するには、放棄された閲覧ジャーニーにどのキャンバスコンポーネントを含める必要がありますか？", "choices": { "A": "遅延コンポーネント", "B": "メッセージコンポーネント", "C": "アクションパスコンポーネント", "D": "エントリルール" }, "correct": ["C"], "explanation": "回答\nC. アクションパスコンポーネント\n解説\nAction Paths は、ユーザーの行動を一定時間評価し、その結果で経路を分岐できます。\nこのケースでは次のように設定します。\n評価ウィンドウ: 1時間\nアクショングループ: カートへの追加イベント\n設定: そのアクショングループでCanvasを終了\n1時間以内にカート追加を行ったユーザーはCanvasから退出し、不要なフォローアップを受けません。カート追加がないユーザーは Everyone Else 経路へ進めます。\nA. 遅延 は待機するだけで、行動による判定や退出処理を行えません。\nB. メッセージ は配信のためのコンポーネントです。\nD. エントリルール はCanvasへの参加条件であり、参加後の1時間の行動評価には使いません。", "links": [{ "text": "アクションパス", "url": "https://www.braze.com/docs/user_guide/messaging/canvas/canvas_components/action_paths?utm_source=operator_user&utm_medium=dashboard" }] }, 
+			{ "id": 4, "type": "単一選択", "question": "あなたは、テレビおよびストリーミングに関連する企業で働いています。ユーザーのお気に入りのテレビ番組に関するデータをBrazeに送信したいとしています。「テレビ番組」は現在、カスタム属性としてBrazeに送信されており、番組のジャンルやネットワークなどのメタデータを付与する必要があります。このデータはどのデータタイプでアップロードする必要がありますか？", "choices": { "A": "数値属性", "B": "階層化属性", "C": "日付属性", "D": "時間属性" }, "correct": ["B"], "explanation": "回答\nB. 階層化属性\n解説\n番組名に加えて、ジャンルやネットワークなど複数の関連メタデータを持たせる場合は、オブジェクト形式の 階層化カスタム属性 を使います。\n例:\n\"favorite_show\": {\n\"title\": \"番組名\",\n\"genre\": \"ドラマ\",\n\"network\": \"配信サービス名\"\n}\nこれにより、番組名だけでなく、ジャンルやネットワーク単位でのセグメンテーションやメッセージのパーソナライズが可能です。\nA・C・D は単一値の型であり、番組にひも付く複数の属性をまとめて保存する用途には適しません。", "links": [{ "text": "階層化カスタム属性", "url": "https://www.braze.com/docs/user_guide/data/activation/attributes/nested_custom_attribute_support?utm_source=operator_user&utm_medium=dashboard" }] }, 
+			{ "id": 5, "type": "複数選択", "question": "あなたは、顧客の地域のレストランの場所を宣伝するメールを顧客に送信することを計画しています。位置情報ベースのパーソナライゼーションを作成するために、Liquidで取り込むことができる2つのオプションはどれですか？（2つ選択してください。）", "choices": { "A": "顧客の都市。", "B": "特定のセグメントに対する顧客のメンバーシップ。", "C": "顧客の最新の位置情報。", "D": "顧客が最後のプッシュ通知を受け取った位置情報。" }, "correct": ["A", "C"], "explanation": "回答\nA. 顧客の都市\nC. 顧客の最新の位置情報\n解説\nどちらもLiquidの標準ユーザー属性として参照できます。\n都市: {{${city}}}\n最新の位置情報: {{${most_recent_location}}}\nB のセグメントメンバーシップは、位置情報ではありません。\nD の「最後のプッシュ通知を受け取った位置情報」は、Liquidの標準パーソナライゼーション属性ではありません。", "links": [{ "text": "サポートされるLiquidパーソナライゼーション", "url": "https://www.braze.com/docs/user_guide/messaging/design_and_edit/personalize/liquid/supported_personalization_tags?utm_source=operator_user&utm_medium=dashboard" }, { "text": "Liquidに関するよくある質問", "url": "https://www.braze.com/docs/user_guide/messaging/design_and_edit/personalize/liquid/faq?utm_source=operator_user&utm_medium=dashboard" }] }, 
+			{ "id": 6, "type": "単一選択", "question": "あなたは、キャンペーンを開始した後、ユーザーがキャンペーンを受け取った後に特定のイベントを実行した割合を測定したいと考えています。\nどの種類のレポートで、あなたが探しているインサイトを得ることができますか？", "choices": { "A": "リテンションレポート", "B": "エンゲージメントレポート", "C": "セグメントデータ", "D": "目標到達プロセスレポート" }, "correct": ["D"], "explanation": "回答\nD. 目標到達プロセスレポート\n解説\n目標到達プロセスレポートでは、最初のステップを「キャンペーンを受信」とし、その後に実行されたカスタムイベントや購入などを設定できます。\nそのため、キャンペーン受信後に特定イベントを実行したユーザーの割合を確認できます。イベントの実行順序と、キャンペーン受信後の評価期間も指定可能です。\nA は継続利用や再訪などの保持率を分析します。\nB はキャンペーンやCanvas全体の集計エンゲージメントを確認するレポートです。\nC はセグメント単位のセッション、イベント、収益データを扱います。", "links": [{ "text": "目標到達プロセスレポート", "url": "https://www.braze.com/docs/user_guide/analytics/reports/funnel_reports?utm_source=operator_user&utm_medium=dashboard" }] }, 
+			{ "id": 7, "type": "複数選択", "question": "カスタムイベントプロパティに関するどの2つの声明が真実ですか？（2つ選択してください。）", "choices": { "A": "カスタムイベントプロパティは、キャンペーントリガーを特定し、コンバージョンを追跡し、メッセージをパーソナライズするために使用できます。", "B": "デフォルトでは、カスタムイベントプロパティはBraze SDKによって自動的にキャプチャされ、更新されます。", "C": "各カスタムイベントまたは購入イベントには、最大256の異なるカスタムイベントプロパティを持つことができます。", "D": "カスタムイベントプロパティは、業界やオーディエンスに関係なく、ブランドによって収集される事前定義された情報の断片です。" }, "correct": ["A", "C"], "explanation": "回答\nA. カスタムイベントプロパティは、トリガー条件の絞り込み、コンバージョン追跡、メッセージのパーソナライズに使用できます。\nC. 各カスタムイベントまたは購入イベントには、最大256個の異なるイベントプロパティを設定できます。\n解説\nイベントプロパティは、イベント発生時の詳細情報です。たとえば Added to Cart イベントに product_name、price、category などを付けられます。\nB は誤りです。イベントプロパティはSDKにより自動取得されるものではなく、SDKまたはAPIでイベント送信時に明示して渡します。\nD は誤りです。イベントプロパティはブランドが独自に定義するイベントごとのメタデータであり、事前定義された共通データではありません。", "links": [{ "text": "カスタムイベントプロパティ", "url": "https://www.braze.com/docs/user_guide/data/activation/events/custom_events/custom_event_properties?utm_source=operator_user&utm_medium=dashboard" }] }, 
+			{ "id": 8, "type": "複数選択", "question": "Brazeからエクスポートできるものはどれですか？（3つ選択してください。）", "choices": { "A": "セグメント", "B": "キャンバスデータ", "C": "ソフトバウンス", "D": "キャンペーン", "E": "メッセージアクティビティログ" }, "correct": ["A", "B", "D"], "explanation": "回答\nA. セグメント\nB. キャンバスデータ\nD. キャンペーン\n解説\nBrazeでは、次のデータをCSVまたはAPIでエクスポートできます。\nセグメントに属するユーザーデータ\nCanvasのユーザーデータや分析データ\nキャンペーンの配信結果、分析データ、受信者データ\nC. ソフトバウンス は個別のエクスポート対象としては扱いません。\nE. メッセージアクティビティログ はメッセージエラーを確認するログであり、この設問の標準エクスポート対象ではありません。", "links": [{ "text": "セグメントデータをCSVにエクスポート", "url": "https://www.braze.com/docs/user_guide/data/distribution/export_braze_data/segment_data_to_csv?utm_source=operator_user&utm_medium=dashboard" }, { "text": "Canvasデータをエクスポート", "url": "https://www.braze.com/docs/user_guide/data/distribution/export_braze_data/export_canvas_data?utm_source=operator_user&utm_medium=dashboard" }, { "text": "キャンペーンデータをエクスポート", "url": "https://www.braze.com/docs/user_guide/data/distribution/export_braze_data/export_campaign_results_data?utm_source=operator_user&utm_medium=dashboard" }] }, 
+			{ "id": 9, "type": "単一選択", "question": "あなたは旅行会社を経営しています。アプリを初めて利用するユーザーのオンボーディングの一環として、ユーザーは旅行希望先の上位10か国を答えます。このカスタム属性データをBrazeにどのように保存すればよいですか？", "choices": { "A": "数値を使用", "B": "ブール値を使用", "C": "日付を使用", "D": "配列を使用" }, "correct": ["D"], "explanation": "回答\nD. 配列を使用\n解説\n上位10か国は、1人のユーザーに複数の値をひも付けるデータです。そのため、国名のリストを配列型のカスタム属性として保存します。\n\"top_travel_destinations\": [\n\"Japan\",\n\"Italy\",\n\"France\"\n]\n配列にすると、特定の国が希望先に含まれるユーザーをセグメントできます。", "links": [{ "text": "カスタムデータのデータ型", "url": "https://www.braze.com/docs/user_guide/data/activation/custom_data/data_types?utm_source=operator_user&utm_medium=dashboard" }] }, 
+			{ "id": 10, "type": "単一選択", "question": "Email_address、user_id、言語は、どのデータタイプの例ですか？", "choices": { "A": "標準属性項目", "B": "自動的に検出されたデータ", "C": "カスタム属性", "D": "カスタムイベント" }, "correct": ["A"], "explanation": "回答\nA. 標準属性項目\n解説\nemail_address、user_id、language は、Brazeがあらかじめ定義しているユーザープロファイルの標準属性です。\nカスタム属性は、ブランド固有のデータに使用します。たとえば loyalty_tier や favorite_destination などです。", "links": [{ "text": "標準属性", "url": "https://www.braze.com/docs/user_guide/data/activation/attributes/standard_attributes?utm_source=operator_user&utm_medium=dashboard" }] }, 
+			{ "id": 11, "type": "複数選択", "question": "あなたは、メールエンゲージメントのクリック率が低いことに気づきました。エンゲージメントを向上させるために、いくつかのテストを行いたいと考えています。どのテスト機能を利用できますか？（3つ選択してください。）", "choices": { "A": "パーソナライズバリアント", "B": "A/Bテスト", "C": "予測スイート（Predictive Suite）", "D": "インテリジェントスイート（Intelligence Suite）", "E": "Currents" }, "correct": ["A", "B", "D"], "explanation": "回答\nA. パーソナライズバリアント\nB. A/Bテスト\nD. インテリジェントスイート\n解説\nA/Bテスト: 件名、本文、CTA、配信時間などのバリアントを比較できます。\nパーソナライズバリアント: 初期テストの反応をもとに、各ユーザーが最もエンゲージしやすいバリアントを選択します。メールではクリック率を最適化指標にできます。\nインテリジェントスイート: Intelligent Selection などにより、複数バリアントの成果を自動で最適化できます。\nPredictive Suite は離脱やイベント発生の予測に使う機能です。\nCurrents はイベントデータを外部にストリーミングするデータエクスポート機能です。", "links": [{ "text": "A/Bテストの最適化", "url": "https://www.braze.com/docs/user_guide/messaging/ab_testing/optimizations?utm_source=operator_user&utm_medium=dashboard" }, { "text": "Intelligence Suite", "url": "https://www.braze.com/docs/user_guide/brazeai/intelligence_suite?utm_source=operator_user&utm_medium=dashboard" }] }, 
+			{ "id": 12, "type": "単一選択", "question": "あなたはeコマース企業で働いています。あなたは、ロイヤルティプログラムに登録しているかどうかに基づいてユーザーをセグメント化したいと考えています。このカスタム属性データをBrazeにどのように保存すればよいですか？", "choices": { "A": "数値", "B": "日付", "C": "ブール値", "D": "配列" }, "correct": ["C"], "explanation": "回答\nC. ブール値\n解説\nロイヤルティプログラムへの登録有無は、true または false の二択で表せるため、ブール型のカスタム属性が適しています。\n例:\n\"loyalty_program_enrolled\": true\nこの属性を使い、登録済みユーザーと未登録ユーザーをセグメントできます。", "links": [{ "text": "カスタム属性", "url": "https://www.braze.com/docs/user_guide/data/activation/attributes/custom_attributes?utm_source=operator_user&utm_medium=dashboard" }] }, 
+			{ "id": 13, "type": "複数選択", "question": "Braze Alloysのエコシステムポートフォリオに含まれる主要なテクノロジーカテゴリーはどれですか？（3つ選択してください。）", "choices": { "A": "ビジネスインテリジェンスと分析", "B": "アドテクとアトリビューション", "C": "Braze Currentsとレポーティング", "D": "簡単なアンケートとコンテンツカード", "E": "データウェアハウスと可視化" }, "correct": ["A", "B", "E"], "explanation": "回答\nA. ビジネスインテリジェンスと分析\nB. アドテクとアトリビューション\nE. データウェアハウスと可視化\n解説\nAlloysは、Brazeと連携するテクノロジーパートナーのエコシステムです。主な領域には、BI・分析、広告・アトリビューション、データウェアハウスなどが含まれます。\nC のCurrentsとレポーティング、D のContent CardsはBrazeの製品機能であり、Alloysのテクノロジーカテゴリーではありません。", "links": [{ "text": "Alloysテクノロジーパートナー", "url": "https://www.braze.com/docs/partners/home?utm_source=operator_user&utm_medium=dashboard" }] }, 
+			{ "id": 14, "type": "単一選択", "question": "あなたの金融サービスアプリケーションはBrazeを使用しており、最近、顧客に初めてのカード取引を促すことを目的としたキャンペーンを開始しました。キャンペーンの目標に関連して、あなたのブランドが監視するのに最も適切で意味のある瞬間（イベント）はどれですか？", "choices": { "A": "顧客がウェルカムメッセージをクリックする", "B": "顧客がカードを有効化する", "C": "顧客がローンを返済する", "D": "顧客が肯定的なレビューを残す" }, "correct": ["B"], "explanation": "回答\nB. 顧客がカードを有効化する\n解説\nコンバージョンイベントは、キャンペーンの目的に直結する高価値な行動を追跡するために設定します。\n初回カード取引を促すキャンペーンでは、カードの有効化は取引前に必要となる、目的に最も近い意味のある行動です。\nA はメッセージ自体へのエンゲージメントであり、カード利用の進展を示しません。\nC と D はこのキャンペーン目標に関連しません。", "links": [{ "text": "コンバージョンイベント", "url": "https://www.braze.com/docs/user_guide/messaging/messaging_fundamentals/conversion_events?utm_source=operator_user&utm_medium=dashboard" }] }, 
+			{ "id": 15, "type": "単一選択", "question": "あなたのチームは、Brazeでユーザーデータのデータディクショナリー（辞書）を作成しました。このディクショナリーには、名前、説明、カスタムフィールドタイプ、データのインポート元など、各ユーザーデータ要素に関する重要な詳細が含まれています。\n次のユーザーデータ要素について、正しいカスタムフィールドタイプとインポートソースを特定してください。\n要素名：お気に入りのブランド\n定義：このデータは、ウェブサイトのユーザーに表示されるオンボーディングアンケートから収集されます。", "choices": { "A": "SDKによるカスタム属性", "B": "SDK経由のカスタムイベント", "C": "SDKによる標準属性項目", "D": "API経由の購入イベント" }, "correct": ["A"], "explanation": "回答\nA. SDKによるカスタム属性\n解説\n「お気に入りのブランド」は、ユーザーの継続的な好みを表すブランド固有のプロファイルデータです。そのためカスタム属性として保存します。\n収集元はウェブサイトのオンボーディングアンケートなので、Web SDKからカスタム属性を設定します。複数ブランドを選べる場合は配列型にできます。", "links": [{ "text": "SDKでユーザー属性を設定", "url": "https://www.braze.com/docs/developer_guide/analytics/setting_user_attributes?utm_source=operator_user&utm_medium=dashboard" }, { "text": "カスタム属性", "url": "https://www.braze.com/docs/user_guide/data/activation/attributes/custom_attributes?utm_source=operator_user&utm_medium=dashboard" }] }, 
+			{ "id": 16, "type": "単一選択", "question": "あなたのチームはBrazeでターゲットとする顧客ペルソナを作成しています。ペルソナの優先事項は「パワーユーザー」です。ペルソナを構築するには、どのセグメント条件を検討すべきですか？", "choices": { "A": "過去7日間にアプリとサイトを3回を超えて使用し、メッセージングチャネルに登録している。", "B": "過去7日間にメールの配信を停止し、過去30日間にアプリを使用していない。", "C": "メールに最後に反応したのが60日以上前のもので、「push enabled」は「false」である。", "D": "最後に購入したのは365日以上前で、最後にアプリを使用したのは60日以上前である。" }, "correct": ["A"], "explanation": "回答\nA. 過去7日間にアプリとサイトを3回を超えて使用し、メッセージングチャネルに登録している。\n解説\nパワーユーザーは、最近かつ頻繁にサービスを利用しているユーザーとして定義するのが適切です。\nこの条件は、次を組み合わせています。\n直近7日間で3回超の利用: 高い利用頻度\nメッセージングチャネルへの登録: 到達可能なユーザー\nB・C・D は、配信停止、長期間の未利用、低エンゲージメントなどを示しており、休眠または離脱リスクのあるユーザー向けの条件です。", "links": [{ "text": "セグメンテーションフィルター", "url": "https://www.braze.com/docs/user_guide/audience/segments/segmentation_filters?utm_source=operator_user&utm_medium=dashboard" }] }, 
+			{ "id": 17, "type": "単一選択", "question": "あなたは、サブスクリプションの有効期限が切れる7日前に、すべてのユーザーにリマインダーメッセージを送信したいと考えています。適切なセグメントフィルターを使用するには、カスタム属性をどのデータタイプでBrazeに送信する必要がありますか？", "choices": { "A": "時間", "B": "数値", "C": "ブール値", "D": "文字列" }, "correct": ["A"], "explanation": "回答\nA. 時間\n解説\nサブスクリプションの有効期限は日時データなので、時間型のカスタム属性として送信します。\nこれにより、期限が「7日後」であるユーザーを相対日時フィルターで抽出し、リマインダーを送れます。\n例: subscription_expiration_at: \"2026-04-07T00:00:00Z\"", "links": [{ "text": "カスタムデータのデータ型", "url": "https://www.braze.com/docs/user_guide/data/activation/custom_data/data_types?utm_source=operator_user&utm_medium=dashboard" }] }, 
+			{ "id": 18, "type": "単一選択", "question": "あなたは、ユーザーがプラットフォームのメンバーシップをキャンセルしようとしたときに表示されるアプリ内メッセージ（IAM）を開始することを計画しています。このIAMは「Cancellation_Attempt」というイベントによってトリガーされ、そのIAMをリアルタイムでトリガーしたいと考えています。イベント「Cancellation_Attempt」をインポートしてリアルタイムトリガー条件を満たすには、どの方法を使用する必要がありますか？", "choices": { "A": "CSVアップロード", "B": "Braze Currents", "C": "クラウドデータ取り込み（CDI）", "D": "Braze SDK" }, "correct": ["D"], "explanation": "回答\nD. Braze SDK\n解説\nアプリ内メッセージをカスタムイベントでリアルタイムにトリガーするには、イベントをBraze SDKで記録する必要があります。\nCancellation_Attempt をSDKからログすると、そのイベントをトリガーにしたIAMが端末上で表示されます。\nCSVアップロード と CDI はこの端末上のリアルタイムIAMトリガーには適しません。\nCurrents はBrazeから外部システムへのイベントデータ出力です。", "links": [{ "text": "SDKでアプリ内メッセージをトリガー", "url": "https://www.braze.com/docs/developer_guide/in_app_messages/triggering_messages?utm_source=operator_user&utm_medium=dashboard" }] }, 
+			{ "id": 19, "type": "単一選択", "question": "あなたのクリエイティブチームは、プッシュメッセージに含める画像のオプションを複数作成しました。あなたは、どの画像がコンバージョン率を高めるのに最も効果的かをテストしたいと考えています。このテストをBrazeでどのように設定しますか？", "choices": { "A": "コネクテッドコンテンツを使用して、API経由でプッシュ画像を取り込む。", "B": "インテリジェントタイミングを実装して、1日のさまざまな時間に同じ画像を送信する。", "C": "このキャンペーンの追加フィルターとして、インテリジェントチャネルを適用する。", "D": "各バリアントが異なるプッシュ画像である、多変量テストを開発する。" }, "correct": ["D"], "explanation": "回答\nD. 各バリアントが異なるプッシュ画像である、多変量テストを開発する。\n解説\nプッシュキャンペーンでは、画像を変えた複数のバリアントを作成し、コンバージョン率を比較できます。\n画像だけを変える場合はA/Bテストとしても扱えますが、選択肢では多変量テストが該当します。コンバージョンイベントを設定し、各画像バリアントの成果を評価します。", "links": [{ "text": "多変量テストとA/Bテストの作成", "url": "https://www.braze.com/docs/user_guide/messaging/ab_testing/create_tests?utm_source=operator_user&utm_medium=dashboard" }] }, 
+			{ "id": 20, "type": "複数選択", "question": "Brazeにインポートできるカスタム属性の有効なデータタイプはどれですか？（3つ選択してください。）", "choices": { "A": "ユーザーID", "B": "配列", "C": "文字列", "D": "時間", "E": "API" }, "correct": ["B", "C", "D"], "explanation": "回答\nB. 配列\nC. 文字列\nD. 時間\n解説\nいずれもBrazeでカスタム属性として保存できる有効なデータ型です。\n配列: 複数の値のリスト\n文字列: テキスト値\n時間: 日付と時刻\nユーザーID はユーザーを識別する標準フィールドです。\nAPI はデータ型ではなく、データ取り込み方法です。", "links": [{ "text": "カスタムデータのデータ型", "url": "https://www.braze.com/docs/user_guide/data/activation/custom_data/data_types?utm_source=operator_user&utm_medium=dashboard" }] }, 
+			{ "id": 21, "type": "複数選択", "question": "ユーザー行動イベントとして分類されるオプションはどれですか？（3つ選択してください。）", "choices": { "A": "アプリ内インプレッション", "B": "メールクリック", "C": "カスタムイベント", "D": "セッション", "E": "購入" }, "correct": ["C", "D", "E"], "explanation": "回答\nC. カスタムイベント\nD. セッション\nE. 購入\n解説\nこれらは、ユーザーがアプリやWebサイト内で行った行動として記録されるイベントです。\nカスタムイベント：商品閲覧、チュートリアル完了など、事業に合わせて定義する行動\nセッション：ユーザーがアプリを開いて利用を開始または終了した行動\n購入：ユーザーが商品やサービスを購入した行動\n一方、アプリ内インプレッションとメールクリックは、配信済みメッセージへの反応を表すメッセージエンゲージメントイベントです。", "links": [{ "text": "イベント", "url": "https://www.braze.com/docs/user_guide/data/activation/events?utm_source=operator_user&utm_medium=dashboard" }, { "text": "顧客行動およびユーザーイベント", "url": "https://www.braze.com/docs/user_guide/data/distribution/braze_currents/event_glossary/customer_behavior_events?utm_source=operator_user&utm_medium=dashboard" }] }, 
+			{ "id": 22, "type": "複数選択", "question": "あなたのチームは、Brazeで追跡されるすべてのイベントの信頼できる情報源となるハブを設計しています。その一環として、データディクショナリーをまとめています。イベントの命名規則の作成においてBrazeが推奨するベストプラクティスを3つ挙げてください。（3つ選択してください。）", "choices": { "A": "イベント名の大文字と小文字を区別し、形式には一貫性を持たせる。", "B": "イベントに同じような名前を付けることを避ける。", "C": "命名規則を明確にする。", "D": "長いイベント属性文字列を作成する。", "E": "イベント名を作成日別にグループ化する。" }, "correct": ["A", "B", "C"], "explanation": "回答\nA. イベント名の大文字と小文字を区別し、形式には一貫性を持たせる。\nB. イベントに同じような名前を付けることを避ける。\nC. 命名規則を明確にする。\n解説\nイベント名は、誰が見ても用途を理解できるように明確かつ一貫した形式で管理します。\n大文字と小文字、区切り文字、単語順などの形式を統一します。\n似た名前のイベントを複数作ると、誤ったイベントでセグメントやトリガーを設定する原因になります。\n命名規則を明確にし、データディクショナリーに記録します。\nDの長いイベント属性文字列は、Brazeダッシュボードで切り詰められる可能性があるため推奨されません。Eの作成日によるグループ化も推奨事項ではありません。", "links": [{ "text": "イベント命名規則", "url": "https://www.braze.com/docs/user_guide/data/activation/events/event_naming_conventions?utm_source=operator_user&utm_medium=dashboard" }] }, 
+			{ "id": 23, "type": "単一選択", "question": "月間アクティブユーザー数（MAU）にはどのタイプのユーザーが含まれますか？", "choices": { "A": "匿名ユーザー", "B": "非アクティブユーザー", "C": "解約したユーザー", "D": "アプリをダウンロードしたものの、アプリを開かなかったユーザー" }, "correct": ["A"], "explanation": "回答\nA. 匿名ユーザー\n解説\nMAUは、過去30日間にアプリまたはサイトで少なくとも1回セッションを記録したユーザー数です。匿名ユーザーも、セッションが記録されていればMAUに含まれます。\n非アクティブユーザー、解約済みユーザー、アプリをダウンロードしただけで開いていないユーザーは、セッションがないためMAUには含まれません。", "links": [{ "text": "ホームダッシュボード：月間アクティブユーザー数", "url": "https://www.braze.com/docs/user_guide/analytics/dashboards/home?utm_source=operator_user&utm_medium=dashboard#monthly-active-users" }] }, 
+			{ "id": 24, "type": "複数選択", "question": "ユーザーがアプリ内で意味のあるアクションを実行したときに、そのユーザーにトランザクションメッセージを送信したいと考えています。Brazeでこのメッセージを表示するために使用できる方法はどれですか？（2つ選択してください。）", "choices": { "A": "スケジュール配信", "B": "APIキャンペーン", "C": "APIトリガー配信", "D": "アクションベースの配信" }, "correct": ["C", "D"], "explanation": "回答\nC. APIトリガー配信\nD. アクションベースの配信\n解説\nアクションベースの配信：カスタムイベント、購入、セッション開始など、Brazeで追跡されたユーザー行動をトリガーにメッセージを送信します。トランザクションメッセージに適しています。\nAPIトリガー配信：自社のサーバーやシステムからBraze APIを呼び出して、特定のユーザーにメッセージを送信します。より高度なトランザクション用途に適しています。\nスケジュール配信は指定した日時に送る方式です。APIキャンペーンはAPIトリガー配信とは別の機能で、この用途の選択肢ではありません。", "links": [{ "text": "アクションベースの配信", "url": "https://www.braze.com/docs/user_guide/messaging/campaigns/schedule_your_campaign/triggered_delivery?utm_source=operator_user&utm_medium=dashboard" }, { "text": "APIトリガー配信", "url": "https://www.braze.com/docs/user_guide/messaging/campaigns/schedule_your_campaign/api_triggered_delivery?utm_source=operator_user&utm_medium=dashboard" }] }, 
+			{ "id": 25, "type": "単一選択", "question": "あなたのチームは、どのデータがあなたのBrazeの使用に最も関連があるかを分析しています。目標は、キャンペーン、キャンバス、またはセグメントで使用されていない属性やイベントをクリーンアップすることです。あなたは、利用されていない属性やイベントの追跡を停止したいと考えています。この機能を活用すべきですか？", "choices": { "A": "フリークエンシーキャップ", "B": "イベントの命名", "C": "ブロックリスト", "D": "ユーザーエイリアス" }, "correct": ["C"], "explanation": "回答\nC. ブロックリスト\n解説\nブロックリストを使用すると、不要になったカスタム属性、カスタムイベント、購入イベントについて、今後Brazeが新しいデータを処理・記録しないようにできます。\n既存のデータは保持されますが、未使用データの追跡を停止できます。完全に削除したい場合は、ブロックリストに登録した後で削除します。\n注意点として、ブロックリストに登録した属性またはイベントを使用するセグメント、キャンペーン、キャンバスはアーカイブされます。", "links": [{ "text": "カスタムデータのブロックリスト", "url": "https://www.braze.com/docs/user_guide/data/activation/custom_data/blocklist_custom_data?utm_source=operator_user&utm_medium=dashboard" }] }, 
+			{ "id": 26, "type": "単一選択", "question": "あなたは、メールキャンペーンを開始することを計画しています。メールには、少なくとも1回購入したことがあるお客様向けの15％オフの割引コードを含めます。お客様の過去の購入イベントデータは、まだBrazeにアップロードされていません。この履歴データは、割引コードメールのBrazeオーディエンスを作成するために使用されます。過去の購入イベントをBrazeにインポートするにはどの方法を使用すればよいですか？", "choices": { "A": "CSVアップロード", "B": "REST API", "C": "Currents", "D": "SDK" }, "correct": ["B"], "explanation": "回答\nB. REST API\n解説\n過去の購入履歴は、/users/track REST APIを使ってBrazeへ移行できます。Brazeでは、このエンドポイントを過去の購入データなどの履歴データの一括インポートに使用できます。\nCSVインポートはカスタムイベントとユーザー属性の取り込みに対応しますが、購入イベントの履歴移行にはREST APIを使用します。Currentsはデータのエクスポート用であり、SDKは通常アプリやWebサイトで発生するリアルタイムの行動追跡に使用します。", "links": [{ "text": "統合の概要：レガシーユーザーデータの移行", "url": "https://www.braze.com/docs/developer_guide/getting_started/integration_overview?utm_source=operator_user&utm_medium=dashboard#migrating-legacy-user-data" }, { "text": "ユーザーデータのインポート", "url": "https://www.braze.com/docs/user_guide/audience/manage_audience/import_users?utm_source=operator_user&utm_medium=dashboard" }] }, 
+			{ "id": 27, "type": "単一選択", "question": "キャンバスコンポーネントのすべての機能を実装するためのキャンバスを構築しようとしています。条件分岐、メッセージステップ、ユーザー更新、遅延以外のキャンバスのコンポーネントにはどのようなものがありますか？", "choices": { "A": "プッシュ、オーディエンスパス、IAM、アクションパス、実験パス", "B": "IAM、プッシュ、オーディエンスパス、アクションパス、実験パス", "C": "オーディエンスパス、プッシュ、実験パス、オーディエンス同期", "D": "オーディエンスパス、アクションパス、実験パス、オーディエンス同期" }, "correct": ["D"], "explanation": "回答\nD. オーディエンスパス、アクションパス、実験パス、オーディエンス同期\n解説\nこれらはいずれもCanvasのコンポーネントです。\nオーディエンスパス：オーディエンス条件に応じてユーザーを分岐\nアクションパス：購入やメッセージ操作などの行動に応じて分岐\n実験パス：複数のパスを比較し、効果をテスト\nオーディエンス同期：外部広告プラットフォームのオーディエンスと同期\nプッシュとIAMは、Canvasの独立したコンポーネントではなく、メッセージステップで設定できるメッセージチャネルです。", "links": [{ "text": "Canvasコンポーネント", "url": "https://www.braze.com/docs/user_guide/messaging/canvas/canvas_components?utm_source=operator_user&utm_medium=dashboard" }] }, 
+			{ "id": 28, "type": "単一選択", "question": "あなたは、最も重要なキャンペーンのパフォーマンス指標を自分自身に送信するために、毎週のエンゲージメントレポートをスケジュールしました。このデータを毎週使用して、主要なコンバージョンイベントであるセッション開始数の傾向を評価します。\nあなたは、セッションの開始数が前期間よりも少ないことに気付きました。この指標を発見した後の次のステップとして最も適切なものはどれですか？", "choices": { "A": "特別なプロモーションやフィードバックのリクエストをプッシュ通知で送信します。", "B": "セグメント分析トラッキングを使用して、個々のコホートのセッション開始数が増加しているか減少しているかを確認します。", "C": "新しいキャンペーンやキャンバスが、アプリの訪問数を増やしているかどうかを調査します。", "D": "エンゲージメントレポートの頻度を毎週ではなく毎日に増やします。" }, "correct": ["B"], "explanation": "回答\nB. セグメント分析トラッキングを使用して、個々のコホートのセッション開始数が増加しているか減少しているかを確認します。\n解説\nまず、どのユーザーコホートでセッション開始数が低下しているかを切り分けます。セグメント分析トラッキングを有効にすると、セグメント別のセッション数を時系列で確認できます。\n原因となっているコホートを特定してから、キャンペーンやCanvasの見直し、再エンゲージメント施策を検討するのが適切です。", "links": [{ "text": "セグメント分析トラッキング", "url": "https://www.braze.com/docs/user_guide/analytics/tracking/segment_analytics_tracking?utm_source=operator_user&utm_medium=dashboard" }, { "text": "エンゲージメントレポート", "url": "https://www.braze.com/docs/user_guide/analytics/reports/engagement_reports?utm_source=operator_user&utm_medium=dashboard" }] }, 
+			{ "id": 29, "type": "単一選択", "question": "製品チームは最近、アプリの大規模なバグ修正をリリースしました。必要なバグ修正を適用するためにアプリをアップグレードする必要があることをユーザーに警告するために、5つのプッシュ通知を含むキャンバスを作成しました。プッシュ通知の内容を踏まえると、お勧めのコンバージョンイベントはどれですか？", "choices": { "A": "アプリがバックグラウンド状態に移行", "B": "アプリの削除", "C": "アプリを開く", "D": "アプリの更新" }, "correct": ["D"], "explanation": "回答\nD. アプリの更新\n解説\nコンバージョンイベントは、メッセージで促した高価値な行動を測定するために設定します。このCanvasはバグ修正のためのアプリ更新を促す内容なので、目的に直接対応するアプリの更新を設定します。\nBrazeでは、指定したアプリのバージョンがアップグレードされたときに、コンバージョンとして計測できます。", "links": [{ "text": "コンバージョンイベント", "url": "https://www.braze.com/docs/user_guide/messaging/messaging_fundamentals/conversion_events?utm_source=operator_user&utm_medium=dashboard" }] }, 
+			{ "id": 30, "type": "複数選択", "question": "あなたは、新しいウェルカムジャーニーがパフォーマンス目標を達成しているかどうかを監視したいと考えています。新しいキャンバスのコンバージョンを追跡するために、どのアクションを実行できますか？（3つ選択してください。）", "choices": { "A": "最大4つのコンバージョンイベントを選択し、そのうちの1つをメインコンバージョンイベントとする。", "B": "キャンバスに入ってからコンバージョンイベントを実行するまでの時間を割り当てる。", "C": "キャンバスを起動した後はいつでもコンバージョンイベントを変更できる。", "D": "コンバージョンイベントとしてカスタムイベント（商品ページの閲覧やカートへの追加など）を選択する。", "E": "コンバージョンイベントとしてメッセージエンゲージメントイベント（メッセージの開封やクリックなど）を選択する。" }, "correct": ["A", "B", "D"], "explanation": "回答\nA. 最大4つのコンバージョンイベントを選択し、そのうちの1つをメインコンバージョンイベントとする。\nB. キャンバスに入ってからコンバージョンイベントを実行するまでの時間を割り当てる。\nD. コンバージョンイベントとしてカスタムイベント（商品ページの閲覧やカートへの追加など）を選択する。\n解説\nCanvasでは、最大4つのコンバージョンイベントを設定でき、最初に追加したイベントがメインコンバージョンイベントになります。あわせて、Canvasへのエントリーからコンバージョンとして計測するまでの期限を設定します。\nカスタムイベントもコンバージョンイベントとして選択可能です。たとえば、ウェルカムジャーニーならproduct_viewedやadded_to_cartなどを成果指標にできます。\nCanvasを起動した後は、コンバージョンイベントを変更できません。また、メッセージの開封やクリックはCanvasのコンバージョンイベントとして設定するものではありません。", "links": [{ "text": "コンバージョンイベント", "url": "https://www.braze.com/docs/user_guide/messaging/messaging_fundamentals/conversion_events?utm_source=operator_user&utm_medium=dashboard" }, { "text": "Canvasの作成", "url": "https://www.braze.com/docs/user_guide/messaging/canvas/create_a_canvas?utm_source=operator_user&utm_medium=dashboard" }] }, 
+			{ "id": 31, "type": "単一選択", "question": "ある顧客が、プッシュキャンペーンの量を監視するためのエンゲージメントレポートを設定することを希望しています。エンゲージメントレポートを受け取るために、顧客がこれらのキャンペーンを適切に特定して整理するにはどうすればよいでしょうか？", "choices": { "A": "プッシュ通知が送信されたら、エンゲージメントレポートを含むアプリ内メッセージをトリガーする。", "B": "ユーザーがネイティブプロンプトを受け入れたときに、ソフトプッシュを使用してエンゲージメントレポートを受け取る。", "C": "プッシュ通知が送信されたら、エンゲージメントレポートを含むコンテンツカードをトリガーする。", "D": "これらのキャンペーンに「プッシュレポート」などのタグを追加し、エンゲージメントレポートを設定して、これらのタグ付きキャンペーンの日次レポートを送信する。" }, "correct": ["D"], "explanation": "回答\nD. これらのキャンペーンに「プッシュレポート」などのタグを追加し、エンゲージメントレポートを設定して、これらのタグ付きキャンペーンの日次レポートを送信する。\n解説\nエンゲージメントレポートでは、タグに基づいて対象のキャンペーンやCanvasを自動選択できます。対象のプッシュキャンペーンに共通タグを付けることで、新しく作成される対象キャンペーンもレポートに含められます。\nアプリ内メッセージ、ソフトプッシュ、コンテンツカードは、エンゲージメントレポートの対象キャンペーンを整理・抽出する方法ではありません。", "links": [{ "text": "エンゲージメントレポート", "url": "https://www.braze.com/docs/user_guide/analytics/reports/engagement_reports?utm_source=operator_user&utm_medium=dashboard" }] }, 
+			{ "id": 32, "type": "複数選択", "question": "あなたは、プラットフォームでの1か月間の無料ストリーミングをユーザーにオファーするプッシュ通知を送信したいと考えています。このキャンペーンでは、カスタムイベント「watched_movie」の実行を終了したばかりのユーザーをターゲットにしようと思っています。ユーザーに対してイベント「watched_movie」をアップロードするには、どのインポート方法を使用できますか？（2つ選択してください。）", "choices": { "A": "SDK", "B": "Currents", "C": "CSVアップロード", "D": "REST API" }, "correct": ["A", "D"], "explanation": "回答\nA. SDK\nD. REST API\n解説\nwatched_movieのようにアプリ内で発生したカスタムイベントは、通常以下でBrazeへ送信します。\nSDK：ユーザーが映画を視聴し終えたタイミングで、アプリからイベントを記録\nREST API：サーバー側の処理からイベントを記録\nCurrentsはデータのエクスポート機能です。\nなお、現在はCSVアップロードでもカスタムイベントの一括インポートに対応しています。ただし、この設問のようなリアルタイムの行動トリガーでは、SDKまたはREST APIが出題意図に沿った選択です。", "links": [{ "text": "カスタムイベントの記録", "url": "https://www.braze.com/docs/developer_guide/analytics/logging_events?utm_source=operator_user&utm_medium=dashboard" }, { "text": "CSVインポート", "url": "https://www.braze.com/docs/user_guide/audience/manage_audience/import_users/csv_import?utm_source=operator_user&utm_medium=dashboard" }] }, 
+			{ "id": 33, "type": "単一選択", "question": "あなたは、アプリを使用するメリットをユーザーに説明するオンボーディングジャーニーを構築することを計画しています。これはどのタイプのジャーニーですか？", "choices": { "A": "トランザクション", "B": "期間限定", "C": "販売促進", "D": "ライフサイクル" }, "correct": ["D"], "explanation": "回答\nD. ライフサイクル\n解説\nオンボーディングは、新規ユーザーにアプリの価値や使い方を伝え、初期利用を定着させるためのライフサイクルジャーニーです。\nトランザクション、期間限定、販売促進ではなく、ユーザーと長期的な関係を築くための施策に分類されます。", "links": [{ "text": "オンボーディングCanvasテンプレート", "url": "https://www.braze.com/docs/user_guide/messaging/templates/canvas_templates/braze_templates/onboarding?utm_source=operator_user&utm_medium=dashboard" }] }, 
+			{ "id": 34, "type": "単一選択", "question": "あなたは、ユーザーのカートに残されたアイテムの詳細を参照するカート放棄メッセージを送信したいと考えています。Liquidのみを使用する場合、どのユースケースが目標を達成する有効な方法ですか？", "choices": { "A": "カート内のアイテムに基づいてユーザーをセグメント化し、購入を促すメッセージを送信します。", "B": "Liquidを使用してユーザーの名前を参照し、ユーザーに購入を促すメッセージの文章を含めます。", "C": "Liquidを使用して、カート放棄イベントに関連付けられている製品名と価格のイベントプロパティを参照します。", "D": "Liquidを使用して、カート内のアイテムの有効期限のカウントダウンタイマーを表示します。" }, "correct": ["C"], "explanation": "回答\nC. Liquidを使用して、カート放棄イベントに関連付けられている製品名と価格のイベントプロパティを参照します。\n解説\nカート放棄イベントに製品名や価格をイベントプロパティとして含め、アクションベースのキャンペーンでLiquidから参照します。\n例：\n{{event_properties.${product_name}}}\n{{event_properties.${price}}}\nこれにより、ユーザーがカートに残した具体的な商品情報をメッセージに表示できます。", "links": [{ "text": "カスタムイベントプロパティ：メッセージのパーソナライズ", "url": "https://www.braze.com/docs/user_guide/data/activation/events/custom_events/custom_event_properties?utm_source=operator_user&utm_medium=dashboard#personalize-messages" }] }, 
+			{ "id": 35, "type": "単一選択", "question": "Brazeのキャンペーンにパーソナライゼーションを追加するにはどの言語を使用しますか？", "choices": { "A": "C++", "B": "JavaScript", "C": "Liquid", "D": "Java" }, "correct": ["C"], "explanation": "回答\nC. Liquid\n解説\nBrazeでは、Liquidを使ってユーザー属性、カスタム属性、イベントプロパティなどをメッセージに差し込み、パーソナライズします。\n例：\n{{${first_name}}}", "links": [{ "text": "Liquidリファレンス", "url": "https://www.braze.com/docs/user_guide/messaging/design_and_edit/personalize/liquid?utm_source=operator_user&utm_medium=dashboard" }] }, 
+			{ "id": 36, "type": "単一選択", "question": "あなたはeコマース事業を営んでおり、オンラインプラットフォームと実店舗両方からの購入データを持っています。どちらのタイプの購入でも、Brazeでメッセージングをトリガーする必要があります。これを実現するために推奨されるアプローチはどれですか？", "choices": { "A": "SDK経由でオンライン購入データを送信し、その後すべての購入データをAPI経由で送信する。", "B": "すべての購入データをSDK経由で送信する。", "C": "オンライン購入データをAPI経由で送信し、その他すべての購入データをSDK経由で送信する。", "D": "すべての購入データをAPI経由で送信する。" }, "correct": ["D"], "explanation": "回答\nD. すべての購入データをAPI経由で送信する。\n解説\nオンラインと実店舗の購入データを同じ方法でBrazeに取り込むには、REST APIの/users/trackを使用します。\nSDKはアプリやWebサイト上で発生した行動の記録に適していますが、実店舗のPOSなどアプリ外で発生する購入を直接記録できません。すべての購入をAPIから送信すれば、共通の購入イベントとしてセグメント、パーソナライズ、メッセージトリガーに利用できます。", "links": [{ "text": "購入イベント", "url": "https://www.braze.com/docs/user_guide/data/activation/events/purchase_events?utm_source=operator_user&utm_medium=dashboard" }, { "text": "eコマース推奨イベント", "url": "https://www.braze.com/docs/user_guide/data/activation/events/recommended_events?utm_source=operator_user&utm_medium=dashboard" }] }, 
+			{ "id": 37, "type": "単一選択", "question": "Brazeパートナープログラムの名前はどれですか？", "choices": { "A": "Braze Coppers", "B": "Braze Metals", "C": "Braze Steel", "D": "Braze Alloys" }, "correct": ["D"], "explanation": "回答\nD. Braze Alloys\n解説\nBrazeのテクノロジーパートナープログラムはBraze Alloysです。データ、分析、パーソナライゼーション、広告などのパートナー連携を提供します。", "links": [{ "text": "Technology Partners", "url": "https://www.braze.com/docs/partners/home?utm_source=operator_user&utm_medium=dashboard" }] }, 
+			{ "id": 38, "type": "複数選択", "question": "あなたは、IPウォームアップをサポートするために、ユーザーデータをBrazeにインポートすることを計画しています。ユーザーごとに、標準属性「email」と「email_subscribe」、カスタム属性「most_purchased_category」をアップロードします。\n属性データをBrazeにインポートする際に重要な2つのアクションはどれですか？（2つ選択してください。）", "choices": { "A": "すべてのユーザーに対してすべての属性が同時にアップロードされていることを確認する。", "B": "カスタム属性が、セグメンテーションフィルターなど、使用に適した正しいデータタイプであることを確認する。", "C": "変更されていない属性が各データインポートに含まれていることを確認する。", "D": "標準属性が、スペルと大文字と小文字の区別について、特定の命名規則に従っていることを確認する。" }, "correct": ["B", "D"], "explanation": "回答\nB. カスタム属性が、セグメンテーションフィルターなど、使用に適した正しいデータタイプであることを確認する。\nD. 標準属性が、スペルと大文字と小文字の区別について、特定の命名規則に従っていることを確認する。\n解説\nmost_purchased_categoryは、想定する使い方に合うデータ型で作成します。データ型によって、利用できるセグメンテーションフィルターが変わります。\nまた、emailやemail_subscribeなどの標準属性は、属性名のスペルと大文字小文字を完全に一致させる必要があります。一致しない場合、Brazeでは標準属性ではなくカスタム属性として扱われます。\n全属性を一度にアップロードする必要はなく、変更されていない属性を毎回含める必要もありません。", "links": [{ "text": "CSVインポート", "url": "https://www.braze.com/docs/user_guide/audience/manage_audience/import_users/csv_import?utm_source=operator_user&utm_medium=dashboard" }, { "text": "標準属性", "url": "https://www.braze.com/docs/user_guide/data/activation/attributes/standard_attributes?utm_source=operator_user&utm_medium=dashboard" }] }, 
+			{ "id": 39, "type": "複数選択", "question": "ストリーミングアプリケーションの主な焦点は、ユーザーをアプリに引き留め、引き付けることです。リテンション目標に合った「顧客にとっての重要な瞬間」を3つ選んでください。（3つ選択してください。）", "choices": { "A": "エピソードをお気に入りに追加する。", "B": "「後で見る」プレイリストを作成する。", "C": "アプリケーションをアンインストールする。", "D": "1週間あたり「X」回ストリーミングする。", "E": "SMSにオプトインする。" }, "correct": ["A", "B", "D"], "explanation": "回答\nA. エピソードをお気に入りに追加する。\nB. 「後で見る」プレイリストを作成する。\nD. 1週間あたり「X」回ストリーミングする。\n解説\nこれらは、ユーザーがコンテンツに関心を持ち、継続的にアプリを利用していることを示す行動です。リテンション施策のトリガーや成功指標として活用できます。\nアプリのアンインストールは離脱シグナル、SMSへのオプトインは配信許諾の状態であり、ストリーミング利用の定着を直接示す行動ではありません。", "links": [{ "text": "アクティブユーザーキャンペーン", "url": "https://www.braze.com/docs/user_guide/messaging/campaigns/ideas_and_strategies/active_user_campaigns?utm_source=operator_user&utm_medium=dashboard" }] }, 
+			{ "id": 40, "type": "単一選択", "question": "あなたは、音楽ストリーミングアプリのマーケティング担当者です。ユーザーが「お気に入り」リストに曲を追加したときに、プッシュ通知を送信したいと考えています。あなたは、Liquidパーソナライゼーションを使用して、お気に入りの曲のタイトルをプッシュ通知に含めたいと思っています。このメッセージをトリガーしてパーソナライズするには、どのタイプのデータが必要ですか？", "choices": { "A": "「カスタムイベント：favoritedSong」＋イベントプロパティ：song_title", "B": "「カスタム属性：favoritedSong」＋イベントプロパティ：song_title", "C": "「カスタムイベント：favoritedSong」＋カスタム属性：song_title", "D": "「標準属性：favoritedSong」＋カスタム属性：song_title" }, "correct": ["A"], "explanation": "回答\nA. 「カスタムイベント：favoritedSong」＋イベントプロパティ：song_title\n解説\nfavoritedSongをカスタムイベントとして記録し、ユーザーが曲をお気に入りに追加したタイミングでアクションベースのプッシュをトリガーします。\n曲名はイベントプロパティsong_titleに含め、Liquidで参照します。\n{{event_properties.${song_title}}}\nカスタム属性はユーザープロフィールの状態を保存するデータであり、このような特定の行動を即時にトリガーして、その行動に紐づく曲名を表示する用途にはイベントプロパティが適しています。", "links": [{ "text": "カスタムイベントプロパティ", "url": "https://www.braze.com/docs/user_guide/data/activation/events/custom_events/custom_event_properties?utm_source=operator_user&utm_medium=dashboard" }] }, 
+			{ "id": 41, "type": "単一選択", "question": "売り上げを伸ばして在庫を減らすために、全商品の50%割引コードが記載されたメールでキャンペーンパスを作成しました。お勧めのコンバージョンイベントはどれですか？", "choices": { "A": "カスタム属性を更新する", "B": "アプリをアップグレードする", "C": "購入する", "D": "アプリを開く" }, "correct": ["C"], "explanation": "回答\nC. 購入する\n解説\nこのキャンペーンの目的は、割引コードで購入を促し、売上増加と在庫削減を達成することです。そのため、成果を直接測定できる購入するをコンバージョンイベントに設定します。", "links": [{ "text": "コンバージョンイベント", "url": "https://www.braze.com/docs/user_guide/messaging/messaging_fundamentals/conversion_events?utm_source=operator_user&utm_medium=dashboard" }] }, 
+			{ "id": 42, "type": "単一選択", "question": "タグに関する記述のうち、正しいものはどれですか？", "choices": { "A": "タグは、エンゲージメント戦略を継続して追跡するのに便利な整理ツールです。", "B": "ユーザーエイリアスを識別子として使用する場合、タグは必須です。", "C": "タグを使用すると、Liquid経由でキャンペーンにパーソナライゼーションを追加できます。", "D": "external IDを設定するときは、タグをAPIリクエストに含める必要があります。" }, "correct": ["A"], "explanation": "回答\nA. タグは、エンゲージメント戦略を継続して追跡するのに便利な整理ツールです。\n解説\nタグはキャンペーン、Canvas、セグメントを整理・分類・検索するために使います。共通タグを付けることで、特定の施策群をまとめて確認したり、エンゲージメントレポートの対象を自動選択したりできます。\nユーザーエイリアスやexternal_idの設定には不要で、Liquidのパーソナライゼーション用データでもありません。", "links": [{ "text": "タグ", "url": "https://www.braze.com/docs/user_guide/messaging/governance/tags?utm_source=operator_user&utm_medium=dashboard" }] }, 
+			{ "id": 43, "type": "単一選択", "question": "ユーザーがアプリ内のボタンをクリックしたときに、カスタムイベントに基づいてIAMをトリガーしたいと考えています。このカスタムイベントをBrazeに取り込む最適な方法はどれですか？", "choices": { "A": "SDK", "B": "API", "C": "CSVインポート", "D": "Webhook" }, "correct": ["A"], "explanation": "回答\nA. SDK\n解説\nアプリ内ボタンのクリックでカスタムイベントを記録し、そのイベントでIAMをトリガーする場合はSDKを使用します。\nカスタムイベントをトリガーにしたIAMは、SDKから送信されたイベントでのみ起動できます。REST API、CSVインポート、Webhookではこの用途に使えません。", "links": [{ "text": "IAMのトリガー", "url": "https://www.braze.com/docs/developer_guide/in_app_messages/triggering_messages?utm_source=operator_user&utm_medium=dashboard" }] }, 
+			{ "id": 44, "type": "単一選択", "question": "あなたはスポーツ用品会社のマーケティング担当者です。Liquidでユーザーのお気に入りのスポーツを取り込むことで、パーソナライズされたメッセージを送信したいと考えています。Liquidではどのデータタイプを使用してこの情報を取得できますか？", "choices": { "A": "カスタムイベント", "B": "標準属性", "C": "カスタム属性", "D": "セッション開始日" }, "correct": ["C"], "explanation": "回答\nC. カスタム属性\n解説\nお気に入りのスポーツのような、ユーザーごとに保持する嗜好情報はカスタム属性として保存します。Liquidで参照してメッセージをパーソナライズできます。\n例：\n{{custom_attribute.${favorite_sport}}}\nカスタムイベントは特定時点の行動、標準属性はBrazeで定義済みのユーザー情報です。", "links": [{ "text": "カスタム属性", "url": "https://www.braze.com/docs/user_guide/data/activation/attributes/custom_attributes?utm_source=operator_user&utm_medium=dashboard" }] }, 
+			{ "id": 45, "type": "複数選択", "question": "コネクテッドコンテンツを通じてパーソナライズされたメッセージングでリーチしようとしているユーザーは多種多様です。この目標を達成するのに役立つ3種類のAPIエンドポイントはどれですか？（3つ選択してください。）", "choices": { "A": "有償サービスのエンドポイント", "B": "自社サーバー", "C": "データプライバシー", "D": "無償サービスのエンドポイント", "E": "CSVファイル" }, "correct": ["A", "B", "D"], "explanation": "回答\nA. 有償サービスのエンドポイント\nB. 自社サーバー\nD. 無償サービスのエンドポイント\n解説\nコネクテッドコンテンツは、APIで取得できるリアルタイムデータをメッセージに挿入できます。自社サーバーや、無償または有償の外部APIサービスのエンドポイントを利用できます。\nデータプライバシーはAPIエンドポイントではなく、CSVファイルもコネクテッドコンテンツのリアルタイムAPI呼び出し先ではありません。", "links": [{ "text": "Connected Content", "url": "https://www.braze.com/docs/user_guide/messaging/design_and_edit/personalize/connected_content?utm_source=operator_user&utm_medium=dashboard" }, { "text": "コネクテッドコンテンツで利用できる公開API", "url": "https://www.braze.com/docs/user_guide/messaging/design_and_edit/personalize/connected_content/public_apis?utm_source=operator_user&utm_medium=dashboard" }] }, 
+			{ "id": 46, "type": "単一選択", "question": "「顧客にとっての重要な瞬間」をゴールとするためのジャーニーは、どのツールで構築すべきですか？", "choices": { "A": "セグメントビルダー", "B": "キャンバス", "C": "レポートビルダー", "D": "キャンペーン" }, "correct": ["B"], "explanation": "回答\nB. キャンバス\n解説\nCanvas は、ユーザー行動を起点に、遅延・分岐・複数チャネルのメッセージを組み合わせて顧客ジャーニーを構築するツールです。重要な瞬間をゴールに設定し、コンバージョンイベントで成果を追跡できます。", "links": [{ "text": "Canvas の基本", "url": "https://www.braze.com/docs/user_guide/messaging/canvas/canvas_basics?utm_source=operator_user&utm_medium=dashboard" }] }, 
+			{ "id": 47, "type": "単一選択", "question": "月間アクティブユーザー数（MAU）の値はどの頻度で計算されますか？", "choices": { "A": "四半期ごと", "B": "毎年", "C": "毎月", "D": "毎晩" }, "correct": ["D"], "explanation": "回答\nD. 毎晩\n解説\nMAU は、直近30日間にセッションを記録したユーザー数です。ローリング30日間の値として毎晩計算され、翌日に更新されます。", "links": [{ "text": "ホームダッシュボードの MAU", "url": "https://www.braze.com/docs/user_guide/analytics/dashboards/home?utm_source=operator_user&utm_medium=dashboard#monthly-active-users" }] }, 
+			{ "id": 48, "type": "単一選択", "question": "ある予算作成アプリで、ユーザーがカスタムイベント「openedBudget」をトリガーしてサブスクリプションを「プレミアム」にアップグレードする際に、アプリ内メッセージ（IAM）を起動させたいと考えています。カスタムイベント「upgradedSubscription」には、「subscription_plan」というイベントプロパティがあります。IAMの成功を測定するために、どのBraze機能を使用すべきですか？", "choices": { "A": "イベントプロパティのセグメンテーション", "B": "メッセージのトリガー", "C": "コンバージョントラッキング", "D": "セグメントエクステンション" }, "correct": ["C"], "explanation": "回答\nC. コンバージョントラッキング\n解説\nIAM を表示した後に、ユーザーが upgradedSubscription を実行したかをコンバージョンイベントとして設定します。これにより、表示後のプレミアムへのアップグレード数とコンバージョン率を測定できます。\nsubscription_plan はイベントプロパティとして条件指定に利用できますが、成果自体の測定にはコンバージョントラッキングを使用します。", "links": [{ "text": "コンバージョンイベント", "url": "https://www.braze.com/docs/user_guide/messaging/messaging_fundamentals/conversion_events?utm_source=operator_user&utm_medium=dashboard" }, { "text": "アプリ内メッセージのレポート", "url": "https://www.braze.com/docs/user_guide/channels/in_app_messages/reporting?utm_source=operator_user&utm_medium=dashboard" }] }, 
+			{ "id": 49, "type": "単一選択", "question": "あなたはマーケティング担当者で、「週次業界レポート」のメールが無応答ユーザー（過去12か月間にメールを開封していないユーザー）に送信されないようにする必要があります。ユーザーをどのようにセグメント化する必要がありますか？", "choices": { "A": "「最終ログイン」フィルターを使用して、サイトに最後にログインした時間で判断する。", "B": "「最後に開いたメール」フィルターを使用して、メールを最後に開いた時間で判断する。", "C": "カスタム属性フィルターを使用して、ブランドに対する顧客の感情で判断する。", "D": "「初回ログイン」フィルターを使用して、メールを初めて開封した時間で判断する。" }, "correct": ["B"], "explanation": "回答\nB. 「最後に開いたメール」フィルターを使用して、メールを最後に開いた時間で判断する。\n解説\nメール開封への反応で判定するため、最終メール開封日時を基準にします。過去12か月以内に開封したユーザーを除外し、無応答ユーザーには週次レポートを送らないようにします。\nログイン日時や顧客感情は、メール開封の有無を判断する指標ではありません。", "links": [{ "text": "セグメンテーションフィルター", "url": "https://www.braze.com/docs/user_guide/audience/segments/segmentation_filters?utm_source=operator_user&utm_medium=dashboard" }] }, 
+			{ "id": 50, "type": "単一選択", "question": "あなたは小売企業のマーケティング担当者です。店舗の新しいロイヤルティプログラムについて知らせるために、最も収益を上げている顧客をターゲットにする必要があります。これらのユーザーをターゲットとするセグメントは、どのように作成しますか？", "choices": { "A": "生涯購入金額の合計額を基準とする", "B": "最初のログイン日を基準とする", "C": "最新のセッションを基準とする", "D": "カート放棄の数を基準とする" }, "correct": ["A"], "explanation": "回答\nA. 生涯購入金額の合計額を基準とする\n解説\n最も収益を上げている顧客を対象にするには、購入行動の Money Spent を使い、累計購入金額が一定額以上のユーザーをセグメント化します。\n初回ログイン日、最新セッション、カート放棄数は、顧客の総収益を直接示す条件ではありません。", "links": [{ "text": "購入イベントによるセグメンテーション", "url": "https://www.braze.com/docs/user_guide/data/activation/events/purchase_events?utm_source=operator_user&utm_medium=dashboard#segmentation" }] },
+			{ 
+				"id": 51, 
+				"type": "単一選択", 
+				"question": "新しいユーザーにアプリダウンロードをしてもらいたい。どのようなユーザー条件でセグメントを作るべきか。", 
+				"choices": { 
+					"A": "「アプリをダウンロードしたか？」のフィルタ", 
+					"B": "「最初のログイン日」のフィルタ", 
+					"C": "「アプリをダウンロードしたか？」のフィルタ または 「最初のログイン日」のフィルタ", 
+					"D": "「アプリをダウンロードしたか？」のフィルタ かつ 「最初のログイン日」のフィルタ" 
+				}, 
+				"correct": ["D"], 
+				"explanation": "Aでも良いが、もし「アプリダウンロード」フラグの連携品質に不安がある場合は、未ダウンロード AND 初回ログイン日が存在しないという条件にすることがあります。" 
+			},
+			{ 
+				"id": 52, 
+				"type": "単一選択", 
+				"question": "ユーザーデータを一括でインポートしたい。一括でインポートしたユーザーをセグメントしてマーケティングチームが施策のオーディエンスとして利用したい。どの連携方法が適切か？", 
+				"choices": { 
+					"A": "REST API", 
+					"B": "CDI", 
+					"C": "CSVインポート", 
+					"D": "Braze SDK" 
+				}, 
+				"correct": ["C"], 
+				"explanation": "Braze標準機能の CSV Import（Audience > Import Users） が最も適しています。CSVインポートでは、ユーザー属性やカスタム属性を一括登録でき、その属性を利用してセグメントを作成できます" 
+			}
+
+	];
+
+// --- State ---
+let phase = 'start'; // start | quiz | result
+let questions = [];
+let currentIdx = 0;
+let selected = [];
+let answered = false;
+let results = [];
+
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function startQuiz() {
+  questions = shuffle(QUESTIONS_DATA);
+  currentIdx = 0;
+  selected = [];
+  answered = false;
+  results = [];
+  phase = 'quiz';
+  render();
+}
+
+function toggleSelect(key) {
+  if (answered) return;
+  const q = questions[currentIdx];
+  const isMulti = q.type === '複数選択';
+  if (isMulti) {
+    if (selected.includes(key)) selected = selected.filter(k => k !== key);
+    else selected = [...selected, key];
+  } else {
+    selected = [key];
+  }
+  render();
+}
+
+function submitAnswer() {
+  if (selected.length === 0) return;
+  const q = questions[currentIdx];
+  answered = true;
+  const ok = [...selected].sort().join(',') === [...q.correct].sort().join(',');
+  results.push({ correct: ok });
+  render();
+}
+
+function nextQuestion() {
+  if (currentIdx + 1 >= questions.length) {
+    phase = 'result';
+  } else {
+    currentIdx++;
+    selected = [];
+    answered = false;
+  }
+  render();
+}
+
+function getChoiceClass(key) {
+  const q = questions[currentIdx];
+  if (!answered) return selected.includes(key) ? 'choice-btn selected' : 'choice-btn';
+  if (q.correct.includes(key) && selected.includes(key)) return 'choice-btn correct';
+  if (!q.correct.includes(key) && selected.includes(key)) return 'choice-btn wrong';
+  if (q.correct.includes(key) && !selected.includes(key)) return 'choice-btn missed';
+  return 'choice-btn';
+}
+
+function getChoiceIcon(key) {
+  const q = questions[currentIdx];
+  if (!answered) return '';
+  if (q.correct.includes(key) && selected.includes(key)) return '<span class="choice-icon" style="color:#4caf50">✓</span>';
+  if (!q.correct.includes(key) && selected.includes(key)) return '<span class="choice-icon" style="color:#ef5350">✗</span>';
+  if (q.correct.includes(key) && !selected.includes(key)) return '<span class="choice-icon" style="color:#4caf50;opacity:0.7">✓</span>';
+  return '';
+}
+
+function escapeHtml(str) {
+  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function render() {
+  const container = document.getElementById('appContainer');
+  const progressWrap = document.getElementById('progressWrap');
+  const progressLabel = document.getElementById('progressLabel');
+  const progressFill = document.getElementById('progressFill');
+
+  if (phase === 'start') {
+    progressWrap.style.display = 'none';
+    container.className = 'card start-card';
+    container.innerHTML = `
+      <div class="start-emoji">🎯</div>
+      <div class="start-title">認定試験対策アプリ</div>
+      <div class="start-sub">Braze Certified Marketing Strategy Expert<br>全${QUESTIONS_DATA.length}問・ランダム順で出題されます</div>
+      <div class="start-stats">
+        <div class="stat-item"><div class="stat-num">${QUESTIONS_DATA.length}</div><div class="stat-desc">問題数</div></div>
+        <div class="stat-item"><div class="stat-num">単一＋複数</div><div class="stat-desc">問題形式</div></div>
+        <div class="stat-item"><div class="stat-num">80%</div><div class="stat-desc">合格目安</div></div>
+      </div>
+      <button class="btn" onclick="startQuiz()">スタート →</button>
+    `;
+    return;
+  }
+
+  if (phase === 'result') {
+    progressWrap.style.display = 'none';
+    const total = questions.length;
+    const correctCount = results.filter(r => r.correct).length;
+    const pct = Math.round((correctCount / total) * 100);
+    const emoji = pct >= 80 ? '🎉' : pct >= 60 ? '💪' : '📚';
+    const gradeText = pct >= 80 ? '合格ライン到達！' : pct >= 60 ? 'もう少しで合格！' : '要復習';
+    const gradeClass = pct >= 80 ? 'grade-badge grade-pass' : pct >= 60 ? 'grade-badge grade-near' : 'grade-badge grade-fail';
+    container.className = 'card result-card';
+    container.innerHTML = `
+      <div class="result-emoji">${emoji}</div>
+      <div class="result-score">${pct}%</div>
+      <div class="result-label">正解率</div>
+      <div class="${gradeClass}">${gradeText}</div>
+      <div class="result-stats">
+        <div class="stat-item"><div class="result-stat-num color-green">${correctCount}</div><div class="stat-desc">正解</div></div>
+        <div class="stat-item"><div class="result-stat-num color-red">${total - correctCount}</div><div class="stat-desc">不正解</div></div>
+        <div class="stat-item"><div class="result-stat-num color-white">${total}</div><div class="stat-desc">合計問題数</div></div>
+      </div>
+      <button class="btn" onclick="startQuiz()">もう一度チャレンジ →</button>
+    `;
+    return;
+  }
+
+  // Quiz phase
+  const q = questions[currentIdx];
+  const total = questions.length;
+  const pct = (currentIdx / total) * 100;
+  const isMulti = q.type === '複数選択';
+
+  progressWrap.style.display = 'flex';
+  progressLabel.textContent = `${currentIdx + 1} / ${total}`;
+  progressFill.style.width = pct + '%';
+
+  const choiceKeys = Object.keys(q.choices);
+  const choicesHtml = choiceKeys.map(key => `
+    <button class="${getChoiceClass(key)}" onclick="toggleSelect('${key}')" ${answered ? 'disabled' : ''}>
+      <span class="choice-key">${key}</span>
+      <span class="choice-text">${escapeHtml(q.choices[key])}</span>
+      ${getChoiceIcon(key)}
+    </button>
+  `).join('');
+
+  const explanationHtml = answered ? `
+    <div class="explanation-box">
+      <div class="explanation-title">📖 解説</div>
+      <div class="explanation-text">${escapeHtml(q.explanation)}</div>
+      ${q.links && q.links.length > 0 ? `
+        <div class="links-title">参考リンク</div>
+        <div class="links-wrap">
+          ${q.links.map(l => `<a class="ref-link" href="${escapeHtml(l.url)}" target="_blank" rel="noopener noreferrer">🔗 ${escapeHtml(l.text)}</a>`).join('')}
+        </div>
+      ` : ''}
+    </div>
+  ` : '';
+
+  const actionHtml = !answered
+    ? `<button class="btn" onclick="submitAnswer()" ${selected.length === 0 ? 'disabled' : ''} style="${selected.length === 0 ? 'opacity:0.4' : ''}">回答する</button>`
+    : `<button class="btn" onclick="nextQuestion()">${currentIdx + 1 >= total ? '結果を見る 🎯' : '次の問題 →'}</button>`;
+
+  container.className = 'card';
+  container.innerHTML = `
+    <div class="question-meta">
+      <span class="q-num">問題 ${currentIdx + 1}</span>
+      <span class="type-badge ${isMulti ? 'type-multi' : 'type-single'}">${isMulti ? '複数選択' : '単一選択'}</span>
+    </div>
+    <div class="question-text">${escapeHtml(q.question)}</div>
+    <div class="choices">${choicesHtml}</div>
+    ${explanationHtml}
+    <div class="action-row">${actionHtml}</div>
+  `;
+}
+
+// Init
+render();
+</script>
+</body>
+</html>
