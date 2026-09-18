@@ -424,6 +424,28 @@
 <script>
 (function(){
 
+  /* ---------- Persistence ---------- */
+  var STORE_KEY = 'turi_state_v1';
+  function saveState() {
+    try {
+      localStorage.setItem(STORE_KEY, JSON.stringify({
+        tab: (document.querySelector('.tab.active') || {}).dataset && document.querySelector('.tab.active').dataset.tab,
+        lineType: currentLineType,
+        lineGo: lineGoInput.value,
+        lineLbIn: lineLbInInput.value,
+        sinkerGo: sinkerGoInput.value,
+        sinkerGIn: sinkerGInInput.value,
+        genCat: genCat,
+        genValue: genValueInput.value,
+        genFrom: genFromSel.value,
+        genTo: genToSel.value
+      }));
+    } catch(e) {}
+  }
+  function loadState() {
+    try { return JSON.parse(localStorage.getItem(STORE_KEY) || 'null'); } catch(e) { return null; }
+  }
+
   /* ---------- Tabs ---------- */
   var tabOrder = ['line', 'sinker', 'general'];
 
@@ -435,7 +457,7 @@
   }
 
   document.querySelectorAll('.tab').forEach(function(btn){
-    btn.addEventListener('click', function(){ activateTab(btn.dataset.tab); });
+    btn.addEventListener('click', function(){ activateTab(btn.dataset.tab); saveState(); });
   });
 
   /* ---------- Swipe to change tabs ---------- */
@@ -453,7 +475,7 @@
     var current = document.querySelector('.tab.active').dataset.tab;
     var idx = tabOrder.indexOf(current);
     var next = dx < 0 ? idx + 1 : idx - 1;
-    if (next >= 0 && next < tabOrder.length) activateTab(tabOrder[next]);
+    if (next >= 0 && next < tabOrder.length) { activateTab(tabOrder[next]); saveState(); }
   }, { passive: true });
 
   /* ---------- Generic interpolation helper ----------
@@ -531,6 +553,7 @@
       currentLineType = btn.dataset.type;
       updateLine();
       updateLineReverse();
+      saveState();
     });
   });
 
@@ -557,7 +580,7 @@
       : '';
     lineRangeNote.className = (mm.outOfRange || lb.outOfRange) ? 'note warn' : 'note';
   }
-  lineGoInput.addEventListener('input', updateLine);
+  lineGoInput.addEventListener('input', function(){ updateLine(); saveState(); });
 
   var lineLbInInput = document.getElementById('line-lb-in');
   var lineGoOut = document.getElementById('line-go-out');
@@ -571,7 +594,7 @@
     var go = interp(table, 'lb', 'go', lb);
     lineGoOut.innerHTML = go.value.toFixed(2) + '<span class="unit">号</span>';
   }
-  lineLbInInput.addEventListener('input', updateLineReverse);
+  lineLbInInput.addEventListener('input', function(){ updateLineReverse(); saveState(); });
 
   updateLine();
   updateLineReverse();
@@ -594,7 +617,7 @@
     sinkerGOut.innerHTML = g.toFixed(2) + '<span class="unit">g</span>';
     sinkerOzOut.textContent = (g / G_TO_OZ).toFixed(3) + ' oz';
   }
-  sinkerGoInput.addEventListener('input', updateSinker);
+  sinkerGoInput.addEventListener('input', function(){ updateSinker(); saveState(); });
 
   var sinkerGInInput = document.getElementById('sinker-g-in');
   var sinkerGoOut = document.getElementById('sinker-go-out');
@@ -606,7 +629,7 @@
     }
     sinkerGoOut.innerHTML = (g / GO_TO_G).toFixed(2) + '<span class="unit">号</span>';
   }
-  sinkerGInInput.addEventListener('input', updateSinkerReverse);
+  sinkerGInInput.addEventListener('input', function(){ updateSinkerReverse(); saveState(); });
 
   updateSinker();
   updateSinkerReverse();
@@ -686,6 +709,7 @@
       genCat = btn.dataset.cat;
       populateGenSelects();
       updateGeneral();
+      saveState();
     });
   });
 
@@ -694,13 +718,45 @@
     genFromSel.value = t;
     genToSel.value = f;
     updateGeneral();
+    saveState();
   });
 
-  genValueInput.addEventListener('input', updateGeneral);
-  genFromSel.addEventListener('change', updateGeneral);
-  genToSel.addEventListener('change', updateGeneral);
+  genValueInput.addEventListener('input', function(){ updateGeneral(); saveState(); });
+  genFromSel.addEventListener('change', function(){ updateGeneral(); saveState(); });
+  genToSel.addEventListener('change', function(){ updateGeneral(); saveState(); });
 
-  populateGenSelects();
+  /* ---------- Restore saved state ---------- */
+  var _s = loadState();
+  if (_s) {
+    if (_s.tab) activateTab(_s.tab);
+    if (_s.lineType && lineTables[_s.lineType]) {
+      currentLineType = _s.lineType;
+      document.querySelectorAll('#line-type-seg button').forEach(function(b){ b.classList.remove('active'); });
+      var ltBtn = document.querySelector('#line-type-seg button[data-type="' + _s.lineType + '"]');
+      if (ltBtn) ltBtn.classList.add('active');
+    }
+    if (_s.lineGo != null) lineGoInput.value = _s.lineGo;
+    if (_s.lineLbIn != null) lineLbInInput.value = _s.lineLbIn;
+    if (_s.sinkerGo != null) sinkerGoInput.value = _s.sinkerGo;
+    if (_s.sinkerGIn != null) sinkerGInInput.value = _s.sinkerGIn;
+    if (_s.genCat && units[_s.genCat]) {
+      genCat = _s.genCat;
+      document.querySelectorAll('#general-cat-seg button').forEach(function(b){ b.classList.remove('active'); });
+      var gcBtn = document.querySelector('#general-cat-seg button[data-cat="' + _s.genCat + '"]');
+      if (gcBtn) gcBtn.classList.add('active');
+    }
+    populateGenSelects();
+    if (_s.genValue != null) genValueInput.value = _s.genValue;
+    if (_s.genFrom) genFromSel.value = _s.genFrom;
+    if (_s.genTo) genToSel.value = _s.genTo;
+  } else {
+    populateGenSelects();
+  }
+
+  updateLine();
+  updateLineReverse();
+  updateSinker();
+  updateSinkerReverse();
   updateGeneral();
 
 })();
